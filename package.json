@@ -1,0 +1,25 @@
+{
+  "name": "lux-vscode",
+  "displayName": "lux-vscode",
+  "description": "Lux test framework language support extension",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.116.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "lux",
+      "aliases": ["Lux (LUcid eXpect scripting)", "lux"],
+      "extensions": ["lux"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "lux",
+      "scopeName": "",
+      "path": "./syntaxes/lux.tmLanguage.json"
+    }]
+  }
+}
