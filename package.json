@@ -1,25 +1,40 @@
 {
-  "name": "lux-vscode",
-  "displayName": "lux-vscode",
-  "description": "Lux test framework language support extension",
-  "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.1.0"
-  },
-  "categories": [
-    "Programming Languages"
-  ],
-  "contributes": {
-    "languages": [{
-      "id": "lux",
-      "aliases": ["Lux (LUcid eXpect scripting)", "lux"],
-      "extensions": ["lux", "luxinc"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "lux",
-      "scopeName": "source.lux",
-      "path": "./syntaxes/lux.tmLanguage.json"
-    }]
-  }
+    "name": "lux-vscode",
+    "displayName": "lux-vscode",
+    "description": "Lux test framework language support extension",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.1.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "lux",
+                "aliases": [
+                    "Lux (LUcid eXpect scripting)",
+                    "lux"
+                ],
+                "extensions": [
+                    "lux",
+                    "luxinc"
+                ],
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "assets/images/icon-256x256.png",
+                    "dark": "assets/images/icon-256x256.png"
+                }
+            }
+        ],
+        "grammars": [
+            {
+                "language": "lux",
+                "scopeName": "source.lux",
+                "path": "./syntaxes/lux.tmLanguage.json"
+            }
+        ]
+    },
+    "icon": "assets/images/icon-256x256.png"
 }
