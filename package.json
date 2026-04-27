@@ -2,13 +2,15 @@
     "name": "lux-vscode",
     "displayName": "lux-vscode",
     "description": "Lux test framework language support extension",
-    "version": "0.0.1",
+    "version": "1.53.0",
     "engines": {
-        "vscode": "^1.1.0"
+        "vscode": "^1.0.0"
     },
     "categories": [
         "Programming Languages"
     ],
+    "activationEvents": [],
+    "main": "./out/extension.js",
     "contributes": {
         "languages": [
             {
@@ -34,7 +36,38 @@
                 "scopeName": "source.lux",
                 "path": "./syntaxes/lux.tmLanguage.json"
             }
+        ],
+        "configuration": [
+            {
+                "title": "Custom Lux env variable value",
+                "properties": {
+                    "lux.envVariables": {
+                        "type": "object",
+                        "default": {},
+                        "description": "Custom environment variable value (in case of environment variable e.g. $MY_DIR)"
+                      }
+                }
+            }
         ]
     },
-    "icon": "assets/images/icon-256x256.png"
+    "icon": "assets/images/icon-256x256.png",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/glob": "^8.1.0",
+        "@types/node": "25.0.0",
+        "@types/vscode": "^1.53.0",
+        "@typescript-eslint/eslint-plugin": "^5.59.8",
+        "@typescript-eslint/parser": "^5.59.8",
+        "@vscode/test-electron": "^2.3.2",
+        "eslint": "^8.41.0",
+        "glob": "^8.1.0",
+        "typescript": "^5.1.3"
+    }
 }
