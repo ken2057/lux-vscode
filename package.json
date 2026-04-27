@@ -1,5 +1,6 @@
 {
     "name": "lux-vscode",
+    "publisher": "duyn",
     "displayName": "lux-vscode",
     "description": "Lux test framework language support extension",
     "version": "1.0.0",
