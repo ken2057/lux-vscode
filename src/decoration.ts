@@ -2,19 +2,22 @@ import * as vscode from 'vscode';
 import { LUX_MODE } from './const';
 import { MacroBlockInfo } from './macro';
 import { LoopBlockInfo } from './loop';
+import { DecorateShellBlockInfo } from './shell';
 
 export interface BlockInfo {
     startText: string;
-    endText: string;
+    endText: string | string[];
     firstLineDecoration?: vscode.TextEditorDecorationType;
     verticalLineDecoration?: vscode.TextEditorDecorationType;
+    lastLineDecoration?: vscode.TextEditorDecorationType;
 }
 
 export function findCurrentBlock(editor: vscode.TextEditor, blockInfo: BlockInfo, text: string, cursorOffset: number): vscode.Range | null {
+    const endText = blockInfo.endText instanceof Array ? blockInfo.endText[0] : blockInfo.endText;
     // 1. Find the nearest [start] before the cursor
     const beforeText = text.substring(0, cursorOffset);
     const startIdx = beforeText.lastIndexOf(blockInfo.startText);
-    const lastEnd = beforeText.lastIndexOf(blockInfo.endText);
+    const lastEnd = beforeText.lastIndexOf(endText);
 
     const lastEndLine = editor.document.positionAt(lastEnd).line
     const cursorLine = editor.document.positionAt(cursorOffset).line
@@ -29,12 +32,12 @@ export function findCurrentBlock(editor: vscode.TextEditor, blockInfo: BlockInfo
     let relativeEndIdx = 0;
     if (!isSameLine) {
         const afterText = text.substring(cursorOffset);
-        relativeEndIdx = afterText.indexOf(blockInfo.endText);
+        relativeEndIdx = afterText.indexOf(endText);
     }
 
     // 3. Verify both exist
     if (startIdx !== -1 && relativeEndIdx !== -1) {
-        const endIdx = isSameLine ? cursorOffset : cursorOffset + relativeEndIdx + blockInfo.endText.length;
+        const endIdx = isSameLine ? cursorOffset : cursorOffset + relativeEndIdx + endText.length;
 
         // Convert offsets to VS Code Positions/Ranges
         return new vscode.Range(
@@ -46,12 +49,15 @@ export function findCurrentBlock(editor: vscode.TextEditor, blockInfo: BlockInfo
     return null;
 }
 
-function clearDecoration(editor: vscode.TextEditor, blockInfo: BlockInfo) {
+export function ClearDecoration(editor: vscode.TextEditor, blockInfo: BlockInfo) {
     if (blockInfo.verticalLineDecoration) {
         editor.setDecorations(blockInfo.verticalLineDecoration, []);
     }
     if (blockInfo.firstLineDecoration) {
         editor.setDecorations(blockInfo.firstLineDecoration, []);
+    }
+    if (blockInfo.lastLineDecoration) {
+        editor.setDecorations(blockInfo.lastLineDecoration, []);
     }
 }
 
@@ -61,7 +67,7 @@ function decorateBlockInfo(
     cursorOffset: number,
     blockInfo: BlockInfo,
 ) {
-    clearDecoration(editor, blockInfo);
+    ClearDecoration(editor, blockInfo);
 
     // Logic to find the innermost block containing the cursor
     const range = findCurrentBlock(editor, blockInfo, text, cursorOffset);
@@ -70,6 +76,7 @@ function decorateBlockInfo(
         const firstLine = editor.document.lineAt(range.start.line);
         const firstLineTrim = firstLine.text.trim();
         const trimOffset = firstLine.text.length - firstLineTrim.length;
+        const rangeEndFix = range.end.line - 1;
 
         if (blockInfo.firstLineDecoration) {
             const underlineRange = new vscode.Range(
@@ -84,7 +91,7 @@ function decorateBlockInfo(
             if (trimOffset == 0) {
                 const verticalRange = new vscode.Range(
                     new vscode.Position(range.start.line + 1, trimOffset),
-                    new vscode.Position(range.end.line - 1, trimOffset)
+                    new vscode.Position(rangeEndFix, trimOffset)
                 );
                 listRange.push(verticalRange)
             } else {
@@ -114,4 +121,5 @@ export function LuxDecorationProvider(event: vscode.TextEditorSelectionChangeEve
 
     decorateBlockInfo(editor, text, cursorOffset, MacroBlockInfo);
     decorateBlockInfo(editor, text, cursorOffset, LoopBlockInfo);
+    // DecorateShellBlockInfo(editor, text, cursorOffset);
 }

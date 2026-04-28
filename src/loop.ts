@@ -8,7 +8,7 @@ const verticalLineDecoration = vscode.window.createTextEditorDecorationType({
     isWholeLine: false,                            // Keep it to the start of the text
 });
 
-const firstLineUnderline = vscode.window.createTextEditorDecorationType({
+const underline = vscode.window.createTextEditorDecorationType({
     border: '1.5px solid rgba(255, 255, 255, 0.7)',
     borderWidth: '0 0 1.5px 0', // Bottom border only
     isWholeLine: false,       // Spans the full width of the editor
@@ -17,6 +17,6 @@ const firstLineUnderline = vscode.window.createTextEditorDecorationType({
 export const LoopBlockInfo: BlockInfo = {
     startText: '[loop ',
     endText: '[endloop]',
-    firstLineDecoration: firstLineUnderline,
+    firstLineDecoration: underline,
     verticalLineDecoration: verticalLineDecoration
 }
