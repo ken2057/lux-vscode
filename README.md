@@ -2,6 +2,8 @@
 
 Language support for [Lux (LUcid eXpect scripting)](https://github.com/hawk/lux)
 
+https://marketplace.visualstudio.com/items?itemName=duyn.lux-vscode
+
 ## Features
 
 - Syntax highlight
