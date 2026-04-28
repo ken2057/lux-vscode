@@ -4,9 +4,11 @@ import * as vscode from 'vscode';
 
 import { LUX_MODE } from './const';
 import { LuxDefinitionProvider } from './declaretion';
+import { LuxDecorationProvider } from './decoration';
 
 function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(LUX_MODE, new LuxDefinitionProvider()));
+    ctx.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(LuxDecorationProvider));
 }
 
 // This method is called when your extension is activated
