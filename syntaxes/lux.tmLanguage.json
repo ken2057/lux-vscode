@@ -108,7 +108,7 @@
             }
         },
         "shell": {
-            "begin": "^[\\s]*\\[(shell|endshell|newshell) ?",
+            "begin": "^[\\s]*\\[(shell|endshell|newshell) ",
             "beginCaptures": {
                 "1": {"name": "entity.name.tag.lux"}
             },
