@@ -3,7 +3,7 @@
     "publisher": "duyn",
     "displayName": "lux-vscode",
     "description": "Lux test framework language support extension",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "engines": {
         "vscode": "^1.53.0"
     },
