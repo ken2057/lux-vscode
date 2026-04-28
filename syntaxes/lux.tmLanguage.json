@@ -154,11 +154,23 @@
             "end": "\\]\\s*$"
         },
         "sleep": {
-            "match": "^[\\s]*\\[(sleep) +(\\d+)\\]",
-            "captures": {
-                "1": {"name": "keyword.control.lux"},
-                "2": {"name": "constant.numeric.sleep.lux"}
-            }
+            "begin": "^\\s*\\[(sleep) +",
+            "beginCaptures": {
+                "1": { "name": "keyword.control.lux" }
+            },
+            "patterns": [
+                { "include": "#buildin_lux_variable" },
+                { "include": "#use_variable" },
+                {
+                    "match": "\\b\\d+\\b",
+                    "name": "constant.numeric.sleep.lux"
+                },
+                {
+                    "match": "\\b.+\\b",
+                    "name": "invalid.illegal.lux"
+                }
+            ],
+            "end": "\\]\\s*$"
         },
         "include": {
             "begin": "^[\\s]*\\[(include) ",
