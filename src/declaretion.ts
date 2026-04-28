@@ -64,6 +64,7 @@ export async function definitionLocation(
 async function openDocument(document: vscode.TextDocument,
                             path: string
 ): Promise<GoDefinitionInformation[]> {
+    path = path.replace(/"/g, "")
     path = patchPath(path)
     const isAbsolutePath = path.startsWith(PATH_SEPARATOR)
 
@@ -223,7 +224,7 @@ function getWordFromPosition(
 
         wType.type = "variable"
         wType.value = word.replace(/^\$?(\$\{?)(.*)(\}?)$/, "$2")
-        wType.find_all = true
+        // wType.find_all = true
         return wType
     }
     // check macro

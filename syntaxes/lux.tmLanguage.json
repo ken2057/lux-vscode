@@ -81,6 +81,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "text.xml" },
                 { "include": "source.js.regexp" }
             ],
             "contentName": "string",
@@ -233,8 +234,7 @@
             },
             "patterns": [
                 { "include": "#buildin_lux_variable" },
-                { "include": "#use_variable" },
-                { "include": "source.js.regexp" }
+                { "include": "#use_variable" }
             ],
             "contentName": "entity.name.section.!.lux",
             "end": "$"
@@ -248,8 +248,7 @@
                     },
                     "patterns": [
                         { "include": "#buildin_lux_variable" },
-                        { "include": "#use_variable" },
-                        { "include": "source.js.regexp" }
+                        { "include": "#use_variable" }
                     ],
                     "contentName": "entity.name.section.!.lux",
                     "end": "\\\\\\s*$"
@@ -261,8 +260,7 @@
                     },
                     "patterns": [
                         { "include": "#buildin_lux_variable" },
-                        { "include": "#use_variable" },
-                        { "include": "source.js.regexp" }
+                        { "include": "#use_variable" }
                     ],
                     "contentName": "entity.name.section.!.lux",
                     "end": "\\\\"
@@ -332,6 +330,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "text.xml" },
                 { "include": "source.js.regexp" }
             ],
             "contentName": "string",
