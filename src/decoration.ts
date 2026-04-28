@@ -1,10 +1,13 @@
 import * as vscode from 'vscode';
 import { LUX_MODE } from './const';
-import { decorateMacroBlock } from './macro';
+import { MacroBlockInfo } from './macro';
+import { LoopBlockInfo } from './loop';
 
 export interface BlockInfo {
     startText: string;
     endText: string;
+    firstLineDecoration?: vscode.TextEditorDecorationType;
+    verticalLineDecoration?: vscode.TextEditorDecorationType;
 }
 
 export function findCurrentBlock(editor: vscode.TextEditor, blockInfo: BlockInfo, text: string, cursorOffset: number): vscode.Range | null {
@@ -43,6 +46,65 @@ export function findCurrentBlock(editor: vscode.TextEditor, blockInfo: BlockInfo
     return null;
 }
 
+function clearDecoration(editor: vscode.TextEditor, blockInfo: BlockInfo) {
+    if (blockInfo.verticalLineDecoration) {
+        editor.setDecorations(blockInfo.verticalLineDecoration, []);
+    }
+    if (blockInfo.firstLineDecoration) {
+        editor.setDecorations(blockInfo.firstLineDecoration, []);
+    }
+}
+
+function decorateBlockInfo(
+    editor: vscode.TextEditor,
+    text: string,
+    cursorOffset: number,
+    blockInfo: BlockInfo,
+) {
+    clearDecoration(editor, blockInfo);
+
+    // Logic to find the innermost block containing the cursor
+    const range = findCurrentBlock(editor, blockInfo, text, cursorOffset);
+
+    if (range) {
+        const firstLine = editor.document.lineAt(range.start.line);
+        const firstLineTrim = firstLine.text.trim();
+        const trimOffset = firstLine.text.length - firstLineTrim.length;
+
+        if (blockInfo.firstLineDecoration) {
+            const underlineRange = new vscode.Range(
+                new vscode.Position(range.start.line, trimOffset),
+                new vscode.Position(range.start.line, firstLine.text.length)
+            );
+            editor.setDecorations(blockInfo.firstLineDecoration, [underlineRange]);
+        }
+
+        if (blockInfo.verticalLineDecoration) {
+            let listRange = []
+            if (trimOffset == 0) {
+                const verticalRange = new vscode.Range(
+                    new vscode.Position(range.start.line + 1, trimOffset),
+                    new vscode.Position(range.end.line - 1, trimOffset)
+                );
+                listRange.push(verticalRange)
+            } else {
+                for (let i = range.start.line + 1; i < range.end.line; i++) {
+                    const empty = editor.document.lineAt(i).text.length == 0;
+
+                    if (!empty) {
+                        const verticalRange = new vscode.Range(
+                            new vscode.Position(i, trimOffset),
+                            new vscode.Position(i, trimOffset)
+                        );
+                        listRange.push(verticalRange)
+                    }
+                }
+            }
+            editor.setDecorations(blockInfo.verticalLineDecoration, listRange);
+        }
+    }
+}
+
 export function LuxDecorationProvider(event: vscode.TextEditorSelectionChangeEvent) {
     const editor = event.textEditor;
     if (!editor || editor.document.languageId !== LUX_MODE.language) return;
@@ -50,5 +112,6 @@ export function LuxDecorationProvider(event: vscode.TextEditorSelectionChangeEve
     const cursorOffset = editor.document.offsetAt(event.selections[0].active);
     const text = editor.document.getText();
 
-    decorateMacroBlock(editor, text, cursorOffset);
+    decorateBlockInfo(editor, text, cursorOffset, MacroBlockInfo);
+    decorateBlockInfo(editor, text, cursorOffset, LoopBlockInfo);
 }
