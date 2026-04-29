@@ -7,7 +7,7 @@ import { LuxDefinitionProvider } from './declaretion';
 import { LuxDecorationProvider } from './decoration';
 
 function registerUsualProviders(ctx: vscode.ExtensionContext) {
-	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(LUX_MODE, new LuxDefinitionProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(LUX_MODE, new LuxDefinitionProvider(ctx)));
     ctx.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(LuxDecorationProvider));
 }
 

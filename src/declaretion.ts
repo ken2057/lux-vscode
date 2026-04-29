@@ -25,6 +25,7 @@ interface WordType {
 }
 
 export async function definitionLocation(
+    ctx: vscode.ExtensionContext,
     document: vscode.TextDocument,
     position: vscode.Position,
     token: vscode.CancellationToken
@@ -60,12 +61,12 @@ export async function definitionLocation(
     }
 
     if (wordType.find_on_same_folder) {
-        return await fineDeclareionInSameFolder(document, wordType, regs, token)
+        return await fineDeclareionInSameFolder(ctx, document, wordType, regs, token)
     }
     else if (wordType.find_all) {
         let allResult: GoDefinitionInformation[] = []
         //check current file
-        const r1 = await findDeclaretion(document, position, wordType, regs, token)
+        const r1 = await findDeclaretion(ctx, document, position, wordType, regs, token)
         if (r1 != null && r1.length != 0) {
             allResult.push(...r1)
         }
@@ -74,7 +75,7 @@ export async function definitionLocation(
         }
 
         // check include file
-        const r2 = await findIncludeDeclaretion(document, wordType, regs, token)
+        const r2 = await findIncludeDeclaretion(ctx, document, wordType, regs, token)
         if (r2 != null && r2.length != 0) {
             allResult = allResult.concat(r2)
         }
@@ -84,7 +85,7 @@ export async function definitionLocation(
         return allResult.length > 0 ? allResult : null
     } else {
         // check current file
-        const r1 = await findDeclaretion(document, position, wordType, regs, token)
+        const r1 = await findDeclaretion(ctx, document, position, wordType, regs, token)
         if (r1 != null && r1.length != 0) {
             return r1
         }
@@ -93,6 +94,7 @@ export async function definitionLocation(
 }
 
 async function fineDeclareionInSameFolder(
+    ctx: vscode.ExtensionContext,
     document: vscode.TextDocument,
     wordType: WordType,
     regs: RegExp[],
@@ -110,7 +112,7 @@ async function fineDeclareionInSameFolder(
             return Promise.resolve(null)
         }
         const doc = await vscode.workspace.openTextDocument(file)
-        const result = await findDeclaretion(doc, new vscode.Position(0, 0), wordType, regs, token)
+        const result = await findDeclaretion(ctx, doc, new vscode.Position(0, 0), wordType, regs, token)
         if (result != null && result.length != 0) {
             allResult.push(...result)
         }
@@ -168,12 +170,17 @@ function getDeclaretionLine(
 }
 
 async function findDeclaretion(
+    ctx: vscode.ExtensionContext,
     document: vscode.TextDocument,
     position: vscode.Position,
     wordType: WordType,
     regs: RegExp[],
     token: vscode.CancellationToken
 ): Promise<GoDefinitionInformation[] | null> {
+    if (!checkFileThenAdd(ctx, document)) {
+        return null
+    }
+
     var defInfo: GoDefinitionInformation = {
         file: document.fileName,
         declarationlines: new Array<DefinitionInformation>(),
@@ -232,10 +239,11 @@ async function findDeclaretion(
         return [defInfo];
     }
 
-    return findIncludeDeclaretion(document, wordType, regs, token)
+    return findIncludeDeclaretion(ctx, document, wordType, regs, token)
 }
 
 async function findIncludeDeclaretion(
+    ctx: vscode.ExtensionContext,
     document: vscode.TextDocument,
     wordType: WordType,
     regs: RegExp[],
@@ -270,7 +278,7 @@ async function findIncludeDeclaretion(
                 throw err
             }
 
-        const includeResult = await findDeclaretion(newDoc, new vscode.Position(0, 0), wordType, regs, token)
+        const includeResult = await findDeclaretion(ctx, newDoc, new vscode.Position(0, 0), wordType, regs, token)
         const hasResult = includeResult != null && includeResult.length != 0
         if (wordType.find_all && hasResult) {
             defInfos.push(...includeResult)
@@ -360,13 +368,38 @@ function getWordFromPosition(
     return undefined
 }
 
+function clearCheckedFiles(ctx: vscode.ExtensionContext) {
+    ctx.globalState.update("checkedFiles", [])
+}
+
+function checkFileThenAdd(
+    ctx: vscode.ExtensionContext,
+    document: vscode.TextDocument
+): boolean {
+    const file = document.fileName
+
+    const checkedFiles = ctx.globalState.get<string[]>("checkedFiles", [])
+    if (!checkedFiles.includes(file)) {
+        checkedFiles.push(file)
+        ctx.globalState.update("checkedFiles", checkedFiles)
+        return true;
+    }
+    return false;
+}
+
 export class LuxDefinitionProvider implements vscode.DefinitionProvider {
+    private ctx: vscode.ExtensionContext;
+
+    constructor(ctx: vscode.ExtensionContext) {
+        this.ctx = ctx;
+    }
+
     public provideDefinition(
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken
     ): Thenable<vscode.Location[]> {
-        return definitionLocation(document, position, token).then(
+        return definitionLocation(this.ctx,document, position, token).then(
             (defInfos) => {
                 if (token.isCancellationRequested) {
                     return Promise.resolve([]);
@@ -391,6 +424,8 @@ export class LuxDefinitionProvider implements vscode.DefinitionProvider {
                 vscode.window.showErrorMessage(err);
                 return Promise.reject(err);
             }
-        );
+        ).finally(() => {
+            clearCheckedFiles(this.ctx)
+        });
     }
 }
