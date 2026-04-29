@@ -20,9 +20,10 @@ export interface GoDefinitionInformation {
 }
 
 interface WordType {
-    type: "variable" | "macro" | "link" | undefined
+    type: "variable" | "macro" | "link" | "invoke" | "use_variable" | undefined
     value: string,
     find_all: boolean
+    find_on_same_folder?: boolean,
 }
 
 export async function definitionLocation(
@@ -40,12 +41,19 @@ export async function definitionLocation(
 
     switch (wordType.type) {
         case "variable":
-            regs.push(new RegExp("^\\[(global|local|my)\\s+" + wordType.value + "\\s*="))
-            regs.push(new RegExp("^\\[macro\\s+[-_\\w ]+ " + wordType.value + "[\\s\\]]"))
-            regs.push(new RegExp("^\\[loop\\s+" + wordType.value + "\\s+"))
+            regs.push(new RegExp("\\[(global|local|my)\\s+" + wordType.value + "\\s*="))
+            regs.push(new RegExp("\\[macro\\s+[-_\\w ]+ " + wordType.value + "[\\s\\]]"))
+            regs.push(new RegExp("\\[loop\\s+" + wordType.value + "\\s+"))
+            break
+        case "use_variable":
+            regs.push(new RegExp("\\$" + wordType.value + "\\b"))
+            regs.push(new RegExp("\\${" + wordType.value + "}"))
             break
         case "macro":
-            regs.push(new RegExp("^\\[(macro)\\s+" + wordType.value + "[\\s\\]]"))
+            regs.push(new RegExp("\\[(macro)\\s+" + wordType.value + "[\\s\\]]"))
+            break
+        case "invoke":
+            regs.push(new RegExp("\\[(invoke)\\s+" + wordType.value + "[\\s\\]]"))
             break
         case "link":
             return openDocument(document, wordType.value);
@@ -53,15 +61,63 @@ export async function definitionLocation(
             return Promise.resolve(null)
     }
 
-    let result = await findDeclaretion(document, position.line, undefined, wordType, regs)
-    if (result?.length != 0) {
-        return result
+    if (wordType.find_on_same_folder) {
+        return await fineDeclareionInSameFolder(document, wordType, regs, token)
     }
-    if (token.isCancellationRequested) {
+    else if (wordType.find_all) {
+        let allResult: GoDefinitionInformation[] = []
+        //check current file
+        const r1 = await findDeclaretion(document, position, wordType, regs, token)
+        if (r1 != null && r1.length != 0) {
+            allResult.push(...r1)
+        }
+        if (token.isCancellationRequested) {
+            return Promise.resolve(null)
+        }
+
+        // check include file
+        const r2 = await findIncludeDeclaretion(document, wordType, regs, token)
+        if (r2 != null && r2.length != 0) {
+            allResult = allResult.concat(r2)
+        }
+        if (token.isCancellationRequested) {
+            return Promise.resolve(null)
+        }
+        return allResult.length > 0 ? allResult : null
+    } else {
+        // check current file
+        const r1 = await findDeclaretion(document, position, wordType, regs, token)
+        if (r1 != null && r1.length != 0) {
+            return r1
+        }
         return Promise.resolve(null)
     }
+}
 
-    return await findDeclaretion(document, document.lineCount - 1, position.line, wordType, regs)
+async function fineDeclareionInSameFolder(
+    document: vscode.TextDocument,
+    wordType: WordType,
+    regs: RegExp[],
+    token: vscode.CancellationToken
+): Promise<GoDefinitionInformation[] | null> {
+    const dir = document.fileName.substring(0, document.fileName.lastIndexOf(PATH_SEPARATOR))
+    const relativePattern = new vscode.RelativePattern(dir, "*.{lux,luxinc}")
+    const files = await vscode.workspace.findFiles(relativePattern)
+
+    let allResult: GoDefinitionInformation[] = []
+    wordType.find_all = true
+
+    for (const file of files) {
+        if (token.isCancellationRequested) {
+            return Promise.resolve(null)
+        }
+        const doc = await vscode.workspace.openTextDocument(file)
+        const result = await findDeclaretion(doc, new vscode.Position(0, 0), wordType, regs, token)
+        if (result != null && result.length != 0) {
+            allResult.push(...result)
+        }
+    }
+    return allResult.length > 0 ? allResult : null
 }
 
 async function openDocument(document: vscode.TextDocument,
@@ -109,43 +165,114 @@ function patchPath(path: string): string {
     return path;
 }
 
+function getDeclaretionLine(
+    document: vscode.TextDocument,
+    matchIdx: number,
+    word: string
+): DefinitionInformation {
+    const pos = document.positionAt(matchIdx)
+    const textLine = document.lineAt(pos.line).text
+
+    const exclude = "[^-_\\w]"
+
+    const col = textLine.search(new RegExp(`${exclude}?${word}${exclude}?`))
+
+    return {
+        line: pos.line,
+        column: col != -1 ? col + 1 : -1
+    }
+}
+
 async function findDeclaretion(
     document: vscode.TextDocument,
-    line: number,
-    stop_at: number | undefined,
+    position: vscode.Position,
     wordType: WordType,
     regs: RegExp[],
+    token: vscode.CancellationToken
 ): Promise<GoDefinitionInformation[] | null> {
-    var defInfos = new Array<GoDefinitionInformation>()
-
     var defInfo: GoDefinitionInformation = {
         file: document.fileName,
         name: "",
         declarationlines: new Array<DefinitionInformation>(),
     }
 
-    // file line start from 0
-    for (let i = line; i > -1; i--) {
-        if (stop_at != undefined && i == stop_at) {
-            break
+    const offsetCursor = document.offsetAt(position)
+
+    for (let regIdx = 0; regIdx < regs.length; regIdx++) {
+        let cutTextCount = 0
+        if (token.isCancellationRequested) {
+            return Promise.resolve(null)
         }
 
-        const lineText = document.lineAt(i).text
-        const lineTextTrimed = lineText.trim()
+        let curText = document.getText()
+        let matchIdx = curText.search(regs[regIdx])
 
-        if (isSkipLine(lineTextTrimed)) {
+        if (matchIdx === -1) {
             continue
         }
 
-        const included = /^\[include (.+)\]/g.exec(lineTextTrimed)
-        if (included != null) {
-            const filePath = (await openDocument(document, included[1]))?.[0].file
-            const p = filePath ? filePath : included[1]
+        while (true) {
+            if (matchIdx === -1) {
+                break
+            }
+            if (token.isCancellationRequested) {
+                return Promise.resolve(null)
+            }
 
-            var newDoc: vscode.TextDocument | any = undefined
-            var err: string = ""
+            const declaretionLine = getDeclaretionLine(document, matchIdx, wordType.value)
+            if (wordType.find_all)  {
+                defInfo.declarationlines.push(declaretionLine)
+            } else {
+                if (matchIdx > offsetCursor) {
+                    if (defInfo.declarationlines.length == 0) {
+                        defInfo.declarationlines.push(declaretionLine)
+                    }
+                    break
+                }
+                defInfo.declarationlines = [declaretionLine]
+            }
 
-            await vscode.workspace.openTextDocument(p)
+            const cut = matchIdx - cutTextCount + 1
+            curText = curText.substring(cut)
+            cutTextCount += cut
+            matchIdx = curText.search(regs[regIdx])
+            matchIdx = matchIdx != -1 ? matchIdx + cutTextCount : -1
+
+        }
+    }
+
+    if (defInfo.declarationlines.length != 0) {
+        return [defInfo];
+    }
+
+    return findIncludeDeclaretion(document, wordType, regs, token)
+}
+
+async function findIncludeDeclaretion(
+    document: vscode.TextDocument,
+    wordType: WordType,
+    regs: RegExp[],
+    token: vscode.CancellationToken
+): Promise<GoDefinitionInformation[] | null> {
+    var defInfos = new Array<GoDefinitionInformation>()
+    const text = document.getText()
+
+    const includes = text.matchAll(/\[include (.+)\]/g)
+    while (true) {
+        const include = includes.next()
+        if (include.done || token.isCancellationRequested) {
+            break
+        }
+        const includeFile = include.value[1]
+        const includeLine = include.value[1]
+
+        const filePath = (await openDocument(document, includeFile))?.[0].file
+        const p = filePath ? filePath : includeFile
+
+        var newDoc: vscode.TextDocument | any = undefined
+        var err: string = ""
+
+        await vscode.workspace.openTextDocument(p)
             .then((includedDoc) => {
                 newDoc = includedDoc
             }, (reason) => {
@@ -156,71 +283,44 @@ async function findDeclaretion(
                 throw err
             }
 
-            const includeResult = await findDeclaretion(newDoc, newDoc.lineCount - 1, stop_at, wordType, regs)
-            const hasResult = includeResult != null && includeResult.length != 0
-            if (wordType.find_all && hasResult) {
-                includeResult.forEach((value) => {
-                    if (value.declarationlines.length != 0) {
-                        defInfos.push(value)
-                    }
-                })
-            } else if (hasResult) {
-                return includeResult
-            }
-        }
-
-        for (let regIdx = 0; regIdx < regs.length; regIdx++) {
-            if (lineTextTrimed.match(regs[regIdx])) {
-                const regex = new RegExp(`\\b${wordType.value}\\b`);
-                const index = lineText.search(regex);
-                defInfo.declarationlines.push({
-                    line: i,
-                    column: index != -1 ? index : 0
-                })
-
-                if (wordType.find_all) {
-                    continue
-                } else {
-                    return [defInfo]
-                }
-            }
+        const includeResult = await findDeclaretion(newDoc, new vscode.Position(0, 0), wordType, regs, token)
+        const hasResult = includeResult != null && includeResult.length != 0
+        if (wordType.find_all && hasResult) {
+            defInfos.push(...includeResult)
+        } else if (hasResult) {
+            return includeResult
         }
     }
 
-    if (defInfo.declarationlines.length != 0) {
-        defInfos.push(defInfo)
-    }
-    return defInfos
-}
-
-function isSkipLine(line: string) {
-    if (line == "") return true
-    if (line.startsWith(COMMENT)) return true
-    return !line.startsWith('[')
-    // return !(line.match(/^[!#?]/g) == null)
+    return defInfos;
 }
 
 function getWordFromPosition(
     document: vscode.TextDocument,
     position: vscode.Position
 ): WordType | undefined {
-    const wordRange = document.getWordRangeAtPosition(position, /[-_\w]+/g)
+    const wordRange = document.getWordRangeAtPosition(position, /\w+([-_]\w+)*/g)
+    const wordWithVarRange = document.getWordRangeAtPosition(position, /(\$\w+|\${\w+})([-_]\${\w+}|[-_]\$\w+)*/g)
+
     const lineText = document.lineAt(position.line).text.trim()
     let word = wordRange ? document.getText(wordRange) : ''
+    let wordWithVar = wordWithVarRange ? document.getText(wordWithVarRange) : ''
 
     if (
         !wordRange ||
-        lineText.startsWith(COMMENT) ||
-        // isPositionInString(document, position) ||
         word.match(/^\d+.?\d+$/)
     ) {
         return undefined
     }
 
     var wType: WordType = {type: undefined, value: word, find_all: false}
+    if (document.fileName.endsWith(".luxinc")) {
+        wType.find_on_same_folder = true
+    }
 
     // check is variable
-    if (lineText.match(new RegExp(`\\$\\{?\\b${word}\\b\\}?`))) {
+    const isDiffWord = wordWithVar != '' && word != wordWithVar
+    if (lineText.match(new RegExp(`\\$\\{?\\b${word}\\b\\}?`)) && isDiffWord) {
         if (BUILD_IN_LUX_VARIABLES.indexOf(word) != -1) {
             return undefined
         }
@@ -251,6 +351,19 @@ function getWordFromPosition(
         const file = reInclude.exec(lineText)?.[1]
         wType.type = "link"
         wType.value = file ? file : word
+        wType.find_on_same_folder = false
+        return wType
+    }
+    // check invoke
+    if (lineText.startsWith("[macro ")) {
+        wType.type = "invoke"
+        wType.find_all = true
+        return wType
+    }
+    // check use_variable
+    if (lineText.match(new RegExp(`\\[(global|local|my)\\s+${word}\\s*=`))) {
+        wType.type = "use_variable"
+        wType.find_all = true
         return wType
     }
 
@@ -276,7 +389,10 @@ export class LuxDefinitionProvider implements vscode.DefinitionProvider {
                     const definitionResource = vscode.Uri.file(defInfo.file);
                     defInfo.declarationlines.forEach((value) => {
                         const declarationline = value
-                        locations.push(new vscode.Location(definitionResource, new vscode.Position(declarationline.line, declarationline.column)))
+                        try {
+                            locations.push(new vscode.Location(definitionResource, new vscode.Position(declarationline.line, declarationline.column)))
+                        } catch (error) {
+                        }
                     });
                 });
                 return locations;
