@@ -31,7 +31,7 @@ export async function definitionLocation(
     token: vscode.CancellationToken
 ): Promise<GoDefinitionInformation[] | null> {
     const wordType = getWordFromPosition(document, position);
-    if (wordType == undefined) {
+    if (wordType == undefined || token.isCancellationRequested) {
         return Promise.resolve(null)
     }
 
@@ -56,6 +56,9 @@ export async function definitionLocation(
     let result = await findDeclaretion(document, position.line, undefined, wordType, regs)
     if (result?.length != 0) {
         return result
+    }
+    if (token.isCancellationRequested) {
+        return Promise.resolve(null)
     }
 
     return await findDeclaretion(document, document.lineCount - 1, position.line, wordType, regs)
@@ -262,6 +265,9 @@ export class LuxDefinitionProvider implements vscode.DefinitionProvider {
     ): Thenable<vscode.Location[]> {
         return definitionLocation(document, position, token).then(
             (defInfos) => {
+                if (token.isCancellationRequested) {
+                    return Promise.resolve([]);
+                }
                 if (defInfos == null || defInfos.length === 0) {
                     return Promise.reject("invalid");
                 }
