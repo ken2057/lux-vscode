@@ -1,8 +1,8 @@
 {
     "name": "lux-vscode",
     "publisher": "duyn",
-    "displayName": "lux-vscode",
-    "description": "Lux test framework language support extension",
+    "displayName": "Lux (LUcid eXpect scripting) Language Support",
+    "description": "Lux test language support extension",
     "version": "1.0.2",
     "engines": {
         "vscode": "^1.53.0"
@@ -47,6 +47,16 @@
                         "default": {},
                         "description": "Custom environment variable value (in case of environment variable e.g. $MY_DIR)"
                       }
+                }
+            },
+            {
+                "title": "Show block highlight",
+                "properties": {
+                    "lux.showBlockHighlight": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable or disable block highlight"
+                    }
                 }
             }
         ]

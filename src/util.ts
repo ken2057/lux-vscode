@@ -34,3 +34,8 @@ export function getCustomVariable(varName: string): string | undefined {
             .getConfiguration("lux.envVariables")
             .get(varName)
 }
+
+export function isShowBlockHighlight(): boolean {
+    return vscode.workspace
+            .getConfiguration("lux").get("showBlockHighlight", true)
+}

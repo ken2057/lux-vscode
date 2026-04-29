@@ -3,6 +3,7 @@ import { LUX_MODE } from './const';
 import { MacroBlockInfo } from './macro';
 import { LoopBlockInfo } from './loop';
 import { DecorateShellBlockInfo } from './shell';
+import { isShowBlockHighlight } from './util';
 
 export interface BlockInfo {
     startText: string;
@@ -68,6 +69,7 @@ function decorateBlockInfo(
     blockInfo: BlockInfo,
 ) {
     ClearDecoration(editor, blockInfo);
+    if (!isShowBlockHighlight()) return;
 
     // Logic to find the innermost block containing the cursor
     const range = findCurrentBlock(editor, blockInfo, text, cursorOffset);
@@ -119,7 +121,8 @@ export function LuxDecorationProvider(event: vscode.TextEditorSelectionChangeEve
     const cursorOffset = editor.document.offsetAt(event.selections[0].active);
     const text = editor.document.getText();
 
-    decorateBlockInfo(editor, text, cursorOffset, MacroBlockInfo);
-    decorateBlockInfo(editor, text, cursorOffset, LoopBlockInfo);
+    [MacroBlockInfo, LoopBlockInfo].forEach(BlockInfo => {
+        decorateBlockInfo(editor, text, cursorOffset, BlockInfo);
+    });
     // DecorateShellBlockInfo(editor, text, cursorOffset);
 }
