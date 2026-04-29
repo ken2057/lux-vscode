@@ -26,6 +26,8 @@
         { "include": "#?+" },
         { "include": "#?" },
         { "include": "#block_?" },
+        { "include": "#block_\"" },
+        { "include": "#block_@" },
         { "include": "#loop" },
         { "include": "#-" },
         { "include": "#+" },
@@ -63,7 +65,7 @@
             "beginCaptures": {
                 "1": {"name": "keyword.control.global.lux"},
                 "2": {"name": "keyword.control.lux"},
-                "3": { "name": "punctuation.separator.key-value.lux" }
+                "3": { "name": "entity.name.section.lux" }
             },
             "contentName": "markup.bold",
             "end": "\\]\\s*$",
@@ -76,7 +78,7 @@
             "beginCaptures": {
                 "1": {"name": "keyword.control.global.lux"},
                 "2": {"name": "variable.language.lux"},
-                "3": { "name": "punctuation.separator.key-value.lux" }
+                "3": { "name": "entity.name.section.lux" }
             },
             "patterns": [
                 { "include": "#buildin_lux_variable" },
@@ -351,6 +353,40 @@
                 "1": {"name": "storage.type.block_?.lux"}
             }
         },
+        "block_@": {
+            "begin": "^[\\s]*(\"{3}\\@)",
+            "beginCaptures": {
+                "1": {"name": "storage.type.block_@.lux"}
+            },
+            "patterns": [
+                { "include": "#buildin_lux_variable" },
+                { "include": "#use_variable" },
+                { "include": "text.xml" },
+                { "include": "source.js.regexp" }
+            ],
+            "contentName": "string",
+            "end": "(\"{3})",
+            "endCaptures": {
+                "1": {"name": "storage.type.block_@.lux"}
+            }
+        },
+        "block_\"": {
+            "begin": "^\\s*(\"{3})$",
+            "beginCaptures": {
+                "1": {"name": "storage.type.block_\".start.lux"}
+            },
+            "patterns": [
+                { "include": "#buildin_lux_variable" },
+                { "include": "#use_variable" },
+                { "include": "text.xml" },
+                { "include": "source.js.regexp" }
+            ],
+            "contentName": "string",
+            "end": "^\\s*(\"{3})$",
+            "endCaptures": {
+                "1": {"name": "storage.type.block_\".end.lux"}
+            }
+        },
         "loop": {
             "begin": "^[\\s]*\\[(loop) ([^\\s]+)( [^\\]]*)*\\]",
             "beginCaptures": {
@@ -363,6 +399,7 @@
                 "1": {"name": "keyword.control.global.lux"}
             },
             "patterns": [
+                { "include": "#block_@" },
                 {
                     "begin": "^\\s*(@)",
                     "beginCaptures": {

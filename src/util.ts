@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { EXTENSION_ID } from './const';
+import { EXTENSION_ID, WORKSPACE } from './const';
 
 
 export function getExtensionCommands(): any[] {
@@ -38,4 +38,24 @@ export function getCustomVariable(varName: string): string | undefined {
 export function isShowBlockHighlight(): boolean {
     return vscode.workspace
             .getConfiguration("lux").get("showBlockHighlight", true)
+}
+
+export function patchPath(path: string): string {
+    const reVariable = /\$\{?(\w+)\}?/g
+    const match = reVariable.exec(path);
+    if (match == undefined) {
+        return path
+    }
+
+    let varValue = getCustomVariable(match[1])
+    if (varValue != undefined) {
+        if (varValue.includes(WORKSPACE)) {
+            const workspaceFolders = vscode.workspace.workspaceFolders
+            varValue = varValue.replace(WORKSPACE, workspaceFolders ? workspaceFolders[0].uri.fsPath : "")
+        }
+
+        path = path.replace(match[0], varValue)
+    }
+
+    return path;
 }

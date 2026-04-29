@@ -121,7 +121,9 @@ export function LuxDecorationProvider(event: vscode.TextEditorSelectionChangeEve
     const cursorOffset = editor.document.offsetAt(event.selections[0].active);
     const text = editor.document.getText();
 
-    [MacroBlockInfo, LoopBlockInfo].forEach(BlockInfo => {
+    [MacroBlockInfo,
+     LoopBlockInfo,
+    ].forEach(BlockInfo => {
         decorateBlockInfo(editor, text, cursorOffset, BlockInfo);
     });
     // DecorateShellBlockInfo(editor, text, cursorOffset);

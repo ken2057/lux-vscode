@@ -1,11 +1,10 @@
-
 /*---------------------------------------------------------
  * This code based from
  * https://github.com/microsoft/vscode-go/blob/master/src/goDeclaration.ts
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { getCustomVariable } from './util';
+import { patchPath } from './util';
 import { BUILD_IN_LUX_VARIABLES, COMMENT, PATH_SEPARATOR, WORKSPACE } from './const';
 
 export interface DefinitionInformation {
@@ -15,7 +14,6 @@ export interface DefinitionInformation {
 
 export interface GoDefinitionInformation {
     file: string;
-    name: string;
     declarationlines: DefinitionInformation[];
 }
 
@@ -56,7 +54,7 @@ export async function definitionLocation(
             regs.push(new RegExp("\\[(invoke)\\s+" + wordType.value + "[\\s\\]]"))
             break
         case "link":
-            return openDocument(document, wordType.value);
+            return [await openDocument(document, wordType.value)];
         default:
             return Promise.resolve(null)
     }
@@ -122,9 +120,15 @@ async function fineDeclareionInSameFolder(
 
 async function openDocument(document: vscode.TextDocument,
                             path: string
-): Promise<GoDefinitionInformation[]> {
+): Promise<GoDefinitionInformation> {
     path = path.replace(/"/g, "")
     path = patchPath(path)
+
+    const homeDir =
+      (globalThis as { process?: { env?: { HOME?: string } } }).process?.env?.HOME ?? "";
+
+    path.startsWith("~") && (path = path.replace("~", homeDir))
+
     const isAbsolutePath = path.startsWith(PATH_SEPARATOR)
 
     let uri: vscode.Uri
@@ -138,31 +142,10 @@ async function openDocument(document: vscode.TextDocument,
 
     var filePathInfo: GoDefinitionInformation = {
         file: uri.path,
-        name: "",
         declarationlines: [{line: 0, column: 0}],
     }
 
-    return [filePathInfo]
-}
-
-function patchPath(path: string): string {
-    const reVariable = /\$\{?(\w+)\}?/g
-    const match = reVariable.exec(path);
-    if (match == undefined) {
-        return path
-    }
-
-    let varValue = getCustomVariable(match[1])
-    if (varValue != undefined) {
-        if (varValue.includes(WORKSPACE)) {
-            const workspaceFolders = vscode.workspace.workspaceFolders
-            varValue = varValue.replace(WORKSPACE, workspaceFolders ? workspaceFolders[0].uri.fsPath : "")
-        }
-
-        path = path.replace(match[0], varValue)
-    }
-
-    return path;
+    return filePathInfo
 }
 
 function getDeclaretionLine(
@@ -175,7 +158,8 @@ function getDeclaretionLine(
 
     const exclude = "[^-_\\w]"
 
-    const col = textLine.search(new RegExp(`${exclude}?${word}${exclude}?`))
+    let col = textLine.search(new RegExp(`${exclude}${word}${exclude}`))
+    col = col != -1 ? col : textLine.search(new RegExp(`\\b${word}\\b`))
 
     return {
         line: pos.line,
@@ -192,7 +176,6 @@ async function findDeclaretion(
 ): Promise<GoDefinitionInformation[] | null> {
     var defInfo: GoDefinitionInformation = {
         file: document.fileName,
-        name: "",
         declarationlines: new Array<DefinitionInformation>(),
     }
 
@@ -266,7 +249,7 @@ async function findIncludeDeclaretion(
         const includeFile = include.value[1]
         const includeLine = include.value[1]
 
-        const filePath = (await openDocument(document, includeFile))?.[0].file
+        const filePath = (await openDocument(document, includeFile)).file
         const p = filePath ? filePath : includeFile
 
         var newDoc: vscode.TextDocument | any = undefined
@@ -314,9 +297,6 @@ function getWordFromPosition(
     }
 
     var wType: WordType = {type: undefined, value: word, find_all: false}
-    if (document.fileName.endsWith(".luxinc")) {
-        wType.find_on_same_folder = true
-    }
 
     // check is variable
     const isDiffWord = wordWithVar != '' && word != wordWithVar
@@ -351,19 +331,24 @@ function getWordFromPosition(
         const file = reInclude.exec(lineText)?.[1]
         wType.type = "link"
         wType.value = file ? file : word
-        wType.find_on_same_folder = false
         return wType
     }
     // check invoke
     if (lineText.startsWith("[macro ")) {
         wType.type = "invoke"
         wType.find_all = true
+        if (document.fileName.endsWith(".luxinc")) {
+            wType.find_on_same_folder = true
+        }
         return wType
     }
     // check use_variable
     if (lineText.match(new RegExp(`\\[(global|local|my)\\s+${word}\\s*=`))) {
         wType.type = "use_variable"
         wType.find_all = true
+        if (document.fileName.endsWith(".luxinc")) {
+            wType.find_on_same_folder = true
+        }
         return wType
     }
 
