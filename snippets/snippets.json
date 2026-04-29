@@ -1,0 +1,45 @@
+{
+    "Print progress": {
+        "prefix": "[progress ]",
+        "body": [
+            "[progress $1"
+        ],
+        "description": "Declare a progress"
+    },
+    "Macro block": {
+        "prefix": "[macro ]",
+        "body": [
+            "[macro ${1:name} ${2:args}]",
+            "$3",
+            "[endmacro"
+        ],
+        "description": "Declare a macro block"
+    },
+    "Loop block": {
+        "prefix": "[loop ]",
+        "body": [
+            "[loop ${1:i} ${2:range}]",
+            "$3",
+            "[endloop"
+        ],
+        "description": "Declare a loop block"
+    },
+    "Single doc block": {
+        "prefix": "[doc-1-line]",
+        "body": [
+            "[doc $1"
+        ],
+        "description": "Declare a single doc block"
+    },
+    "Multiple line doc block": {
+        "prefix": "[doc-n-line]",
+        "body": [
+            "[doc]",
+            "${1:title}",
+            "",
+            "${2:description}",
+            "[enddoc"
+        ],
+        "description": "Declare a multiple line doc block"
+    }
+}

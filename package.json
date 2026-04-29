@@ -8,7 +8,8 @@
         "vscode": "^1.53.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Snippets"
     ],
     "activationEvents": [],
     "main": "./out/extension.js",
@@ -36,6 +37,12 @@
                 "language": "lux",
                 "scopeName": "source.lux",
                 "path": "./syntaxes/lux.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "lux",
+                "path": "./snippets/snippets.json"
             }
         ],
         "configuration": [
