@@ -203,16 +203,20 @@ async function findDeclaretion(
             }
 
             const declaretionLine = getDeclaretionLine(document, matchIdx, wordType.value)
-            if (wordType.find_all)  {
-                defInfo.declarationlines.push(declaretionLine)
-            } else {
-                if (matchIdx > offsetCursor) {
-                    if (defInfo.declarationlines.length == 0) {
-                        defInfo.declarationlines.push(declaretionLine)
+            const skipLine = document.lineAt(declaretionLine.line).text.trim().startsWith(COMMENT)
+
+            if (!skipLine) {
+                if (wordType.find_all)  {
+                    defInfo.declarationlines.push(declaretionLine)
+                } else {
+                    if (matchIdx > offsetCursor) {
+                        if (defInfo.declarationlines.length == 0) {
+                            defInfo.declarationlines.push(declaretionLine)
+                        }
+                        break
                     }
-                    break
+                    defInfo.declarationlines = [declaretionLine]
                 }
-                defInfo.declarationlines = [declaretionLine]
             }
 
             const cut = matchIdx - cutTextCount + 1
@@ -297,6 +301,7 @@ function getWordFromPosition(
     }
 
     var wType: WordType = {type: undefined, value: word, find_all: false}
+    const isIncludeFile = document.fileName.endsWith(".luxinc")
 
     // check is variable
     const isDiffWord = wordWithVar != '' && word != wordWithVar
@@ -337,7 +342,7 @@ function getWordFromPosition(
     if (lineText.startsWith("[macro ")) {
         wType.type = "invoke"
         wType.find_all = true
-        if (document.fileName.endsWith(".luxinc")) {
+        if (isIncludeFile) {
             wType.find_on_same_folder = true
         }
         return wType
@@ -346,7 +351,7 @@ function getWordFromPosition(
     if (lineText.match(new RegExp(`\\[(global|local|my)\\s+${word}\\s*=`))) {
         wType.type = "use_variable"
         wType.find_all = true
-        if (document.fileName.endsWith(".luxinc")) {
+        if (isIncludeFile) {
             wType.find_on_same_folder = true
         }
         return wType
