@@ -1,10 +1,40 @@
 {
+    "Define shell (no square bracket)": {
+        "prefix": "shell ",
+        "body": [
+            "[shell $1]"
+        ],
+        "description": "Declare a shell"
+    },
+    "Define shell": {
+        "prefix": "[shell ]",
+        "body": [
+            "[shell $1"
+        ],
+        "description": "Declare a shell"
+    },
+    "Print progress (no square bracket)": {
+        "prefix": "progress ",
+        "body": [
+            "[progress $1]"
+        ],
+        "description": "Declare a progress"
+    },
     "Print progress": {
         "prefix": "[progress ]",
         "body": [
             "[progress $1"
         ],
         "description": "Declare a progress"
+    },
+    "Macro block (no square bracket)": {
+        "prefix": "macro ",
+        "body": [
+            "[macro ${1:name} ${2:args}]",
+            "$3",
+            "[endmacro"
+        ],
+        "description": "Declare a macro block"
     },
     "Macro block": {
         "prefix": "[macro ]",
@@ -15,6 +45,15 @@
         ],
         "description": "Declare a macro block"
     },
+    "Loop block (no square bracket)": {
+        "prefix": "loop ",
+        "body": [
+            "[loop ${1:i} ${2:range}]",
+            "$3",
+            "[endloop"
+        ],
+        "description": "Declare a loop block"
+    },
     "Loop block": {
         "prefix": "[loop ]",
         "body": [
@@ -24,12 +63,30 @@
         ],
         "description": "Declare a loop block"
     },
+    "Single doc block (no square bracket)": {
+        "prefix": "doc-1-line",
+        "body": [
+            "[doc $1]"
+        ],
+        "description": "Declare a single doc block"
+    },
     "Single doc block": {
         "prefix": "[doc-1-line]",
         "body": [
             "[doc $1"
         ],
         "description": "Declare a single doc block"
+    },
+    "Multiple line doc block (no square bracket)": {
+        "prefix": "doc-n-line",
+        "body": [
+            "[doc]",
+            "${1:title}",
+            "",
+            "${2:description}",
+            "[enddoc]"
+        ],
+        "description": "Declare a multiple line doc block"
     },
     "Multiple line doc block": {
         "prefix": "[doc-n-line]",
