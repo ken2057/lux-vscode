@@ -4,7 +4,7 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { WordType, getWordFromPosition, convertIncludePath } from './util';
+import { patchPath, WordType, getWordFromPosition, convertIncludePath } from './util';
 import { COMMENT, PATH_SEPARATOR } from './const';
 
 export interface DefinitionInformation {

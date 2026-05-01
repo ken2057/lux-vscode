@@ -115,7 +115,10 @@ function decorateBlockInfo(
     }
 }
 
-export function LuxDecorationProvider(event: vscode.TextEditorSelectionChangeEvent) {
+export function LuxDecorationListener(
+    ctx: vscode.ExtensionContext,
+    event: vscode.TextEditorSelectionChangeEvent
+) {
     const editor = event.textEditor;
     if (!editor || editor.document.languageId !== LUX_MODE.language) return;
 
@@ -127,5 +130,5 @@ export function LuxDecorationProvider(event: vscode.TextEditorSelectionChangeEve
     ].forEach(BlockInfo => {
         decorateBlockInfo(editor, text, cursorOffset, BlockInfo);
     });
-    // DecorateShellBlockInfo(editor, text, cursorOffset);
+    // DecorateShellBlockInfo(ctx, editor, editor.document.offsetAt(event.selections[0].active));
 }

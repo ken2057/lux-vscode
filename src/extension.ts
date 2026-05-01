@@ -4,8 +4,9 @@ import * as vscode from 'vscode';
 
 import { LUX_MODE } from './const';
 import { LuxDefinitionProvider } from './declaretion';
-import { LuxDecorationProvider } from './decoration';
+import { LuxDecorationListener } from './decoration';
 import { LuxHoverProvider } from './hover';
+import { LuxCacheListener } from './cache';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -17,7 +18,8 @@ export function activate(ctx: vscode.ExtensionContext) {
 	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(LUX_MODE, new LuxDefinitionProvider(ctx)));
 	ctx.subscriptions.push(vscode.languages.registerHoverProvider(LUX_MODE, new LuxHoverProvider(ctx)));
 
-    ctx.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(LuxDecorationProvider));
+    ctx.subscriptions.push(vscode.window.onDidChangeTextEditorSelection((e) => LuxDecorationListener(ctx, e)));
+    // ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(async (e) => await LuxCacheListener(ctx, e)));
 }
 
 // This method is called when your extension is deactivated
