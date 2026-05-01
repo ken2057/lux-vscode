@@ -15,6 +15,7 @@ const underline = vscode.window.createTextEditorDecorationType({
 });
 
 const ShellBlockInfo: BlockInfo = {
+    name: 'shell',
     startText: '[shell ',
     endText: ['[cleanup]', '[shell ', '[endshell ', '[endloop]'],
     firstLineDecoration: underline,

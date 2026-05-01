@@ -15,6 +15,7 @@ const underline = vscode.window.createTextEditorDecorationType({
 });
 
 export const MacroBlockInfo: BlockInfo = {
+    name: 'macro',
     startText: '[macro ',
     endText: '[endmacro]',
     firstLineDecoration: underline,

@@ -1,6 +1,12 @@
 import * as vscode from 'vscode';
-import { EXTENSION_ID, WORKSPACE } from './const';
+import { EXTENSION_ID, WORKSPACE, BUILD_IN_LUX_VARIABLES } from './const';
 
+export interface WordType {
+    type: "variable" | "macro" | "link" | "invoke" | "use_variable" | undefined
+    value: string,
+    find_all: boolean
+    find_on_same_folder?: boolean,
+}
 
 export function getExtensionCommands(): any[] {
     const ext = vscode.extensions.getExtension(EXTENSION_ID);
@@ -58,4 +64,83 @@ export function patchPath(path: string): string {
     }
 
     return path;
+}
+
+export function getWordFromPosition(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    includeBuildIn: boolean = false
+): WordType | undefined {
+    const wordRange = document.getWordRangeAtPosition(position, /\w+([-_]\w+)*/g)
+    const wordWithVarRange = document.getWordRangeAtPosition(position, /(\$\w+|\${\w+})([-_]\${\w+}|[-_]\$\w+)*/g)
+
+    const lineText = document.lineAt(position.line).text.trim()
+    let word = wordRange ? document.getText(wordRange) : ''
+    let wordWithVar = wordWithVarRange ? document.getText(wordWithVarRange) : ''
+
+    if (
+        !wordRange ||
+        word.match(/^\d+.?\d+$/)
+    ) {
+        return undefined
+    }
+
+    var wType: WordType = {type: undefined, value: word, find_all: false}
+    const isIncludeFile = document.fileName.endsWith(".luxinc")
+
+    // check is variable
+    const isDiffWord = wordWithVar != '' && word != wordWithVar
+    if (lineText.match(new RegExp(`\\$\\{?\\b${word}\\b\\}?`)) && isDiffWord) {
+        if (!includeBuildIn && Object.keys(BUILD_IN_LUX_VARIABLES).indexOf(word) != -1) {
+            return undefined
+        }
+
+        wType.type = "variable"
+        wType.value = word.replace(/^\$?(\$\{?)(.*)(\}?)$/, "$2")
+        // wType.find_all = true
+        return wType
+    }
+    // check macro
+    if (lineText.match(new RegExp("\\[invoke " + word))) {
+        const wR = document.getWordRangeAtPosition(position, /[-_\w${}]+/g)
+        let w = wR ? document.getText(wR) : ''
+        const reVar = new RegExp("\\$?\\$\\{?[_-\\w]*\\}?", "g")
+        const hasVar = reVar.exec(w)
+        if (hasVar && hasVar[0] != w) {
+            wType.value = w.replace(hasVar[0], "[-_\\w]+")
+            w = w.replace(hasVar[0], "")
+            wType.find_all = true
+        }
+
+        wType.type = "macro"
+        return wType
+    }
+    // check include file
+    if (lineText.startsWith("[include ")) {
+        const reInclude = new RegExp(/\[include (.*)\]/g)
+        const file = reInclude.exec(lineText)?.[1]
+        wType.type = "link"
+        wType.value = file ? file : word
+        return wType
+    }
+    // check invoke
+    if (lineText.startsWith("[macro ")) {
+        wType.type = "invoke"
+        wType.find_all = true
+        if (isIncludeFile) {
+            wType.find_on_same_folder = true
+        }
+        return wType
+    }
+    // check use_variable
+    if (lineText.match(new RegExp(`\\[(global|local|my)\\s+${word}\\s*=`))) {
+        wType.type = "use_variable"
+        wType.find_all = true
+        if (isIncludeFile) {
+            wType.find_on_same_folder = true
+        }
+        return wType
+    }
+
+    return undefined
 }

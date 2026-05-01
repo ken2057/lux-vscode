@@ -15,6 +15,7 @@ const underline = vscode.window.createTextEditorDecorationType({
 });
 
 export const LoopBlockInfo: BlockInfo = {
+    name: 'loop',
     startText: '[loop ',
     endText: '[endloop]',
     firstLineDecoration: underline,

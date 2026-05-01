@@ -6,6 +6,7 @@ import { DecorateShellBlockInfo } from './shell';
 import { isShowBlockHighlight } from './util';
 
 export interface BlockInfo {
+    name: string;
     startText: string;
     endText: string | string[];
     firstLineDecoration?: vscode.TextEditorDecorationType;
