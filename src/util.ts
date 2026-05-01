@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { EXTENSION_ID, WORKSPACE, BUILD_IN_LUX_VARIABLES } from './const';
+import { EXTENSION_ID, WORKSPACE, BUILD_IN_LUX_VARIABLES, PATH_SEPARATOR } from './const';
 
 export interface WordType {
     type: "variable" | "macro" | "link" | "invoke" | "use_variable" | undefined
@@ -88,6 +88,14 @@ export function getWordFromPosition(
     var wType: WordType = {type: undefined, value: word, find_all: false}
     const isIncludeFile = document.fileName.endsWith(".luxinc")
 
+    // check include file
+    if (lineText.startsWith("[include ")) {
+        const reInclude = new RegExp(/\[include (.*)\]/g)
+        const file = reInclude.exec(lineText)?.[1]
+        wType.type = "link"
+        wType.value = file ? file : word
+        return wType
+    }
     // check is variable
     const isDiffWord = wordWithVar != '' && word != wordWithVar
     if (lineText.match(new RegExp(`\\$\\{?\\b${word}\\b\\}?`)) && isDiffWord) {
@@ -115,14 +123,6 @@ export function getWordFromPosition(
         wType.type = "macro"
         return wType
     }
-    // check include file
-    if (lineText.startsWith("[include ")) {
-        const reInclude = new RegExp(/\[include (.*)\]/g)
-        const file = reInclude.exec(lineText)?.[1]
-        wType.type = "link"
-        wType.value = file ? file : word
-        return wType
-    }
     // check invoke
     if (lineText.startsWith("[macro ")) {
         wType.type = "invoke"
@@ -143,4 +143,30 @@ export function getWordFromPosition(
     }
 
     return undefined
+}
+
+export async function convertIncludePath(
+    document: vscode.TextDocument,
+    path: string
+): Promise<string> {
+    path = path.replace(/"/g, "")
+    path = patchPath(path)
+
+    const homeDir =
+      (globalThis as { process?: { env?: { HOME?: string } } }).process?.env?.HOME ?? "";
+
+    path.startsWith("~") && (path = path.replace("~", homeDir))
+
+    const isAbsolutePath = path.startsWith(PATH_SEPARATOR)
+
+    let uri: vscode.Uri
+    if (isAbsolutePath) {
+        uri = vscode.Uri.file(path)
+    } else {
+        let curPath = document.uri.path
+        curPath = curPath.substring(0, curPath.lastIndexOf(PATH_SEPARATOR));
+        uri = vscode.Uri.file(curPath + PATH_SEPARATOR + path)
+    }
+
+    return uri.path
 }

@@ -4,7 +4,7 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { patchPath, WordType, getWordFromPosition } from './util';
+import { WordType, getWordFromPosition, convertIncludePath } from './util';
 import { COMMENT, PATH_SEPARATOR } from './const';
 
 export interface DefinitionInformation {
@@ -48,7 +48,11 @@ export async function definitionLocation(
             regs.push(new RegExp("\\[(invoke)\\s+" + wordType.value + "[\\s\\]]"))
             break
         case "link":
-            return [await openDocument(document, wordType.value)];
+            const docPath = await convertIncludePath(document, wordType.value);
+            return docPath ? [{
+                file: docPath,
+                declarationlines: [{line: 0, column: 0}]
+            }] : null
         default:
             return Promise.resolve(null)
     }
@@ -111,36 +115,6 @@ async function fineDeclareionInSameFolder(
         }
     }
     return allResult.length > 0 ? allResult : null
-}
-
-async function openDocument(document: vscode.TextDocument,
-                            path: string
-): Promise<GoDefinitionInformation> {
-    path = path.replace(/"/g, "")
-    path = patchPath(path)
-
-    const homeDir =
-      (globalThis as { process?: { env?: { HOME?: string } } }).process?.env?.HOME ?? "";
-
-    path.startsWith("~") && (path = path.replace("~", homeDir))
-
-    const isAbsolutePath = path.startsWith(PATH_SEPARATOR)
-
-    let uri: vscode.Uri
-    if (isAbsolutePath) {
-        uri = vscode.Uri.file(path)
-    } else {
-        let curPath = document.uri.path
-        curPath = curPath.substring(0, curPath.lastIndexOf(PATH_SEPARATOR));
-        uri = vscode.Uri.file(curPath + PATH_SEPARATOR + path)
-    }
-
-    var filePathInfo: GoDefinitionInformation = {
-        file: uri.path,
-        declarationlines: [{line: 0, column: 0}],
-    }
-
-    return filePathInfo
 }
 
 function getDeclaretionLine(
@@ -254,7 +228,7 @@ async function findIncludeDeclaretion(
         const includeFile = include.value[1]
         const includeLine = include.value[1]
 
-        const filePath = (await openDocument(document, includeFile)).file
+        const filePath = await convertIncludePath(document, includeFile)
         const p = filePath ? filePath : includeFile
 
         var newDoc: vscode.TextDocument | any = undefined
@@ -328,7 +302,12 @@ export class LuxDefinitionProvider implements vscode.DefinitionProvider {
                     defInfo.declarationlines.forEach((value) => {
                         const declarationline = value
                         try {
-                            locations.push(new vscode.Location(definitionResource, new vscode.Position(declarationline.line, declarationline.column)))
+                            locations.push(
+                                new vscode.Location(
+                                    definitionResource,
+                                    new vscode.Position(declarationline.line, declarationline.column)
+                                )
+                            )
                         } catch (error) {
                         }
                     });
