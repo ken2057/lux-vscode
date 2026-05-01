@@ -10,6 +10,7 @@
         { "include": "#config" },
         { "include": "#define_variables" },
         { "include": "#buildin_lux_variable" },
+        { "include": "#variable_in_bracket" },
         { "include": "#use_variable" },
         { "include": "#shell" },
         { "include": "#progress" },
@@ -83,6 +84,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "text.xml" },
                 { "include": "source.js.regexp" }
             ],
@@ -116,7 +118,8 @@
             },
             "patterns": [
                 { "include": "#buildin_lux_variable" },
-                { "include": "#use_variable" }
+                { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" }
             ],
             "contentName": "support.other.lux",
             "end": "\\]"
@@ -129,6 +132,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "source.js.regexp" }
             ],
             "contentName": "string",
@@ -212,6 +216,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "source.js.regexp" }
             ],
             "contentName": "string",
@@ -228,6 +233,7 @@
                 { "include": "#var-quote" },
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "source.js.regexp" }
             ],
             "contentName": "string",
@@ -248,7 +254,8 @@
             },
             "patterns": [
                 { "include": "#buildin_lux_variable" },
-                { "include": "#use_variable" }
+                { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" }
             ],
             "contentName": "entity.name.section.!.lux",
             "end": "$"
@@ -262,7 +269,8 @@
                     },
                     "patterns": [
                         { "include": "#buildin_lux_variable" },
-                        { "include": "#use_variable" }
+                        { "include": "#use_variable" },
+                        { "include": "#variable_in_bracket" }
                     ],
                     "contentName": "entity.name.section.!.lux",
                     "end": "\\\\\\s*$"
@@ -274,7 +282,8 @@
                     },
                     "patterns": [
                         { "include": "#buildin_lux_variable" },
-                        { "include": "#use_variable" }
+                        { "include": "#use_variable" },
+                        { "include": "#variable_in_bracket" }
                     ],
                     "contentName": "entity.name.section.!.lux",
                     "end": "\\\\"
@@ -288,7 +297,8 @@
             },
             "patterns": [
                 { "include": "#buildin_lux_variable" },
-                { "include": "#use_variable" }
+                { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" }
             ],
             "contentName": "entity.name.section.!.lux",
             "end": "(\"{3})",
@@ -303,7 +313,8 @@
             },
             "patterns": [
                 { "include": "#buildin_lux_variable" },
-                { "include": "#use_variable" }
+                { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" }
             ],
             "contentName": "string",
             "end": "$"
@@ -315,7 +326,8 @@
             },
             "patterns": [
                 { "include": "#buildin_lux_variable" },
-                { "include": "#use_variable" }
+                { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" }
             ],
             "contentName": "string",
             "end": "(\"{3})",
@@ -331,6 +343,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "source.js.regexp" }
             ],
             "contentName": "string",
@@ -344,6 +357,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "text.xml" },
                 { "include": "source.js.regexp" }
             ],
@@ -361,6 +375,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "text.xml" },
                 { "include": "source.js.regexp" }
             ],
@@ -378,6 +393,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "text.xml" },
                 { "include": "source.js.regexp" }
             ],
@@ -437,6 +453,7 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "source.js.regexp" }
             ],
             "contentName": "string",
@@ -451,11 +468,20 @@
             "patterns": [
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
                 { "include": "source.js.regexp" }
             ],
             "contentName": "string",
             "end": "$",
             "name": "markup.bold"
+        },
+        "variable_in_bracket":{
+            "begin": "\\(",
+            "patterns": [
+                { "include": "#buildin_lux_variable" },
+                { "include": "#use_variable" }
+            ],
+            "end": "\\)"
         }
     }
 }
