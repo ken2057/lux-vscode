@@ -9,7 +9,6 @@ All notable changes to the "lux-vscode" extension are documented in this file.
 
 ## [1.0.5] - 2026-04-29
 
-- Added lightweight caching to avoid repeated file checks.
 - Fixed go-to-definition landing on comment lines.
 
 ## [1.0.4] - 2026-04-29
