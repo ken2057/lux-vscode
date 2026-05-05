@@ -191,7 +191,7 @@
             "end": "\\]\\s*$"
         },
         "macro": {
-            "begin": "^[\\s]*\\[(macro) ([^\\s]+)( [^\\]]*)*\\]",
+            "begin": "^[\\s]*\\[(macro) +([^\\s]+)( [^\\]]*)*\\]",
             "beginCaptures": {
                 "1": {"name": "keyword.control.global.lux"},
                 "2": {"name": "entity.name.function.lux"},
@@ -223,7 +223,7 @@
             "end": "[\"\\]\\)]"
         },
         "invoke": {
-            "begin": "^[\\s]*\\[(invoke) ([^ \\]]+)",
+            "begin": "^[\\s]*\\[(invoke) +([^ \\]]+)",
             "beginCaptures": {
                 "1": {"name": "keyword.control.global.lux"},
                 "2": {"name": "entity.name.function.lux"},
@@ -404,7 +404,7 @@
             }
         },
         "loop": {
-            "begin": "^[\\s]*\\[(loop) ([^\\s]+)( [^\\]]*)*\\]",
+            "begin": "^[\\s]*\\[(loop) +([^\\s]+)( [^\\]]*)*\\]",
             "beginCaptures": {
                 "1": {"name": "keyword.control.global.lux"},
                 "2": {"name": "constant.numeric.lux"},
