@@ -242,7 +242,8 @@ async function findIncludeDeclaretion(
                 err = err.includes("cannot open file") ? "[include " + p + "] file not found" : err
             })
             if (err != "" || newDoc == undefined) {
-                throw err
+                vscode.window.showErrorMessage(err)
+                return null
             }
 
         const includeResult = await findDeclaretion(ctx, newDoc, new vscode.Position(0, 0), wordType, regs, token)

@@ -2,6 +2,10 @@
 
 All notable changes to the "lux-vscode" extension are documented in this file.
 
+## [1.0.7] - 2026-05-07
+
+- Fix go to definition stop when include path not found
+
 ## [1.0.6] - 2026-05-01
 
 - Added variable hover support and expanded caching work.
