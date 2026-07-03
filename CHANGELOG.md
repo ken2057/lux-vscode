@@ -4,7 +4,7 @@ All notable changes to the "lux-vscode" extension are documented in this file.
 
 ## [1.0.8] - 2026-07-03
 
-- Fixed highlight syntax for invoke function with string
+- Fixed highlight for shell/macro/invoke
 
 ## [1.0.7] - 2026-05-07
 
