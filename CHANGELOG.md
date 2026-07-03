@@ -2,6 +2,10 @@
 
 All notable changes to the "lux-vscode" extension are documented in this file.
 
+## [1.0.8] - 2026-07-03
+
+- Fixed highlight syntax for invoke function with string
+
 ## [1.0.7] - 2026-05-07
 
 - Fix go to definition stop when include path not found

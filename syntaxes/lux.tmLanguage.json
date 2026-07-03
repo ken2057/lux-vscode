@@ -223,21 +223,22 @@
             "end": "[\"\\]\\)]"
         },
         "invoke": {
-            "begin": "^[\\s]*\\[(invoke) +([^ \\]]+)",
+            "begin": "^[\\s]*\\[(invoke) +([^ \\]]+) ?",
             "beginCaptures": {
-                "1": {"name": "keyword.control.global.lux"},
+                "1": {"name": "keyword.control.global.lux-invoke"},
                 "2": {"name": "entity.name.function.lux"},
                 "3": {"name": "variable.lux"}
             },
             "patterns": [
+                { "include": "#quote_string" },
                 { "include": "#var-quote" },
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" },
                 { "include": "#variable_in_bracket" },
                 { "include": "source.js.regexp" }
             ],
-            "contentName": "string",
-            "end": "\\]\\s*"
+            "contentName": "string.lux-invoke",
+            "end": "\\]"
         },
         "cleanup": {
             "begin": "^[\\s]*\\[(cleanup) ?",
@@ -482,6 +483,14 @@
                 { "include": "#use_variable" }
             ],
             "end": "\\)"
+        },
+        "quote_string": {
+            "begin": "\"",
+            "patterns": [
+                { "include": "#buildin_lux_variable" },
+                { "include": "#use_variable" }
+            ],
+            "end": "\""
         }
     }
 }
