@@ -86,6 +86,14 @@ export async function definitionLocation(
         if (r1 != null && r1.length != 0) {
             return r1
         }
+        if (token.isCancellationRequested) {
+            return Promise.resolve(null)
+        }
+        // check include file
+        const r2 = await findIncludeDeclaretion(ctx, document, wordType, regs, token)
+        if (r2 != null && r2.length != 0) {
+            return r2
+        }
         return Promise.resolve(null)
     }
 }
