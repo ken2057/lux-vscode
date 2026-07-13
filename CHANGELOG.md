@@ -2,6 +2,11 @@
 
 All notable changes to the "lux-vscode" extension are documented in this file.
 
+## [1.0.9] - 2026-07-13
+
+- Fixed highlight when invoke has double-quote and esceped double-quote as the same time
+- Fix invoke unable to jump to include file
+
 ## [1.0.8] - 2026-07-03
 
 - Fixed highlight for shell/macro/invoke
