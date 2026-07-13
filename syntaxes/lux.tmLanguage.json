@@ -485,11 +485,19 @@
             "end": "\\)"
         },
         "quote_string": {
-            "begin": "\"",
+            "begin": "(\")",
+            "beginCaptures": {
+                "1": {"name": "string.lux-quote-start"}
+            },
             "patterns": [
+                {
+                    "match": "\\\\\"",
+                    "name": "string.lux-quote-escape"
+                },
                 { "include": "#buildin_lux_variable" },
                 { "include": "#use_variable" }
             ],
+            "contentName": "string.lux-quote",
             "end": "\""
         }
     }
