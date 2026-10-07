@@ -47,23 +47,20 @@ export function isShowBlockHighlight(): boolean {
 }
 
 export function patchPath(path: string): string {
-    const reVariable = /\$\{?(\w+)\}?/g
-    const match = reVariable.exec(path);
-    if (match == undefined) {
-        return path
-    }
+    const reVariable = /\$(?:\{(\w+)\}|(\w+))/g
+    return path.replace(reVariable, (whole, braced, plain) => {
+        let varValue = getCustomVariable(braced ?? plain)
+        if (varValue == undefined) {
+            return whole
+        }
 
-    let varValue = getCustomVariable(match[1])
-    if (varValue != undefined) {
         if (varValue.includes(WORKSPACE)) {
             const workspaceFolders = vscode.workspace.workspaceFolders
             varValue = varValue.replace(WORKSPACE, workspaceFolders ? workspaceFolders[0].uri.fsPath : "")
         }
 
-        path = path.replace(match[0], varValue)
-    }
-
-    return path;
+        return varValue
+    });
 }
 
 export function getWordFromPosition(

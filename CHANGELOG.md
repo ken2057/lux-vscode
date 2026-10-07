@@ -2,6 +2,16 @@
 
 All notable changes to the "lux-vscode" extension are documented in this file.
 
+## [1.0.11] - 2026-10-07
+
+- Added syntax highlighting for `[export ...]`.
+- Fixed custom variable parsing to only accept `${VAR}` or `$VAR` (no mismatched braces).
+- Support multiple custom variables in one path (e.g. `$ROOT/${SUB}/file.luxinc`); unknown variables are left as-is.
+
+## [1.0.10] - 2026-07-13
+
+- Version bump only, no functional changes.
+
 ## [1.0.9] - 2026-07-13
 
 - Fixed highlight when invoke has double-quote and esceped double-quote as the same time

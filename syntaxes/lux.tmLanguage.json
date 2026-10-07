@@ -9,6 +9,7 @@
         { "include": "#doc_long" },
         { "include": "#config" },
         { "include": "#define_variables" },
+        { "include": "#define_export" },
         { "include": "#buildin_lux_variable" },
         { "include": "#variable_in_bracket" },
         { "include": "#use_variable" },
@@ -76,6 +77,26 @@
         },
         "define_variables": {
             "begin": "^\\s*\\[(global|local|my) +([^=\\]]+)(=?)",
+            "beginCaptures": {
+                "1": {"name": "keyword.control.global.lux"},
+                "2": {"name": "variable.language.lux"},
+                "3": { "name": "entity.name.section.lux" }
+            },
+            "patterns": [
+                { "include": "#buildin_lux_variable" },
+                { "include": "#use_variable" },
+                { "include": "#variable_in_bracket" },
+                { "include": "text.xml" },
+                { "include": "source.js.regexp" }
+            ],
+            "contentName": "string",
+            "end": "\\]\\s*$",
+            "endCaptures": {
+                "1": {"name": "keyword.control.global.lux"}
+            }
+        },
+        "define_export": {
+            "begin": "^\\s*\\[(export) +([^=\\]]+)(=?)",
             "beginCaptures": {
                 "1": {"name": "keyword.control.global.lux"},
                 "2": {"name": "variable.language.lux"},
