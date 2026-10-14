@@ -2,6 +2,10 @@
 
 All notable changes to the "lux-vscode" extension are documented in this file.
 
+## [1.0.12] - 2026-10-14
+
+- Added syntax highlighting for `[loop]` blocks that repeat until an `@` pattern matches.
+
 ## [1.0.11] - 2026-10-07
 
 - Added syntax highlighting for `[export ...]`.

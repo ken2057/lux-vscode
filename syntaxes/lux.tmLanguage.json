@@ -2,7 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "Lux (LUcid eXpect scripting)",
     "scopeName": "source.lux",
-    "fileTypes": [".lux", ".luxinc"],
+    "fileTypes": [".lux", ".luxinc", ".lux.tmpl"],
     "patterns": [
         { "include": "#comment" },
         { "include": "#doc_short" },
@@ -426,7 +426,7 @@
             }
         },
         "loop": {
-            "begin": "^[\\s]*\\[(loop) +([^\\s]+)( [^\\]]*)*\\]",
+            "begin": "^[\\s]*\\[(loop)(?: +([^\\s\\]]+)( +[^\\]]*)?)?\\]",
             "beginCaptures": {
                 "1": {"name": "keyword.control.global.lux"},
                 "2": {"name": "constant.numeric.lux"},
