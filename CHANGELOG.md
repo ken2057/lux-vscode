@@ -2,6 +2,14 @@
 
 All notable changes to the "lux-vscode" extension are documented in this file.
 
+## [1.1.1] - 2026-10-15
+
+- Added syntax highlighting for `[event_log]` and its enable/disable options.
+- Updated syntax scopes for config, variable definition, export, and include directives.
+- Gave `?` and `=` the same color in `[global name?=value]` assignments.
+- Added errors for unset include variables and missing include files in cached and text searches.
+- Missing include errors show the path from `[include]` and the file and line that contain it.
+
 ## [1.1.0] - 2026-10-15
 
 - Added a cache for `.lux`, `.lux.tmpl`, and included `.luxinc` files to speed up repeated definition searches.

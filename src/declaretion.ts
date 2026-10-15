@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { dirname, relative } from 'path';
-import { WordType, getWordFromPosition, convertIncludePath, skipLine } from './util';
+import { WordType, getWordFromPosition, convertIncludePath, includeOpenErrorMessage, missingIncludeVariablesMessage, skipLine } from './util';
 import { PATH_SEPARATOR } from './const';
 import { CachedLocation, CacheLuxFile, getCachedFiles, getOtherCachedFiles, pinCacheFile, updateCache } from './cache';
 import { isCache } from './configuration';
@@ -32,8 +32,22 @@ export async function definitionLocation(
     }
 
     if (wordType.type === "link") {
+        const missingMessage = missingIncludeVariablesMessage(wordType.value);
+        if (missingMessage) {
+            void vscode.window.showErrorMessage(missingMessage);
+            return null;
+        }
         const file = await convertIncludePath(document, wordType.value);
-        return file ? [{file, declarationlines: [{line: 0, column: 0}]}] : null;
+        if (!file) {
+            return null;
+        }
+        try {
+            await vscode.workspace.openTextDocument(file);
+        } catch {
+            void vscode.window.showErrorMessage(includeOpenErrorMessage(wordType.value, document.fileName, position.line + 1));
+            return null;
+        }
+        return [{file, declarationlines: [{line: 0, column: 0}]}];
     }
 
     if (!isCache()) {
@@ -464,10 +478,19 @@ async function findIncludeDeclaretion(
     token: vscode.CancellationToken,
     checkedFiles: Set<string>
 ): Promise<GoDefinitionInformation[] | null> {
-    const includes = [...document.getText().matchAll(/\[include (.+)\]/g)].map(match => match[1]);
-    const found = await mapConcurrent(includes, async includeFile => {
+    const includes = [...document.getText().matchAll(/\[include (.+)\]/g)].map(match => ({
+        raw: match[1], line: document.positionAt(match.index || 0).line + 1
+    }));
+    const found = await mapConcurrent(includes, async ({raw: includeFile, line}) => {
         const visited = new Set(checkedFiles);
         if (token.isCancellationRequested) {
+            return {result: null, visited};
+        }
+        const missingMessage = missingIncludeVariablesMessage(includeFile);
+        if (missingMessage) {
+            if (!isCache()) {
+                void vscode.window.showErrorMessage(missingMessage);
+            }
             return {result: null, visited};
         }
         const filePath = await convertIncludePath(document, includeFile);
@@ -475,14 +498,20 @@ async function findIncludeDeclaretion(
         if (visited.has(path)) {
             return {result: null, visited};
         }
+        let included: vscode.TextDocument;
         try {
-            const included = await vscode.workspace.openTextDocument(path);
+            included = await vscode.workspace.openTextDocument(path);
+        } catch {
+            if (!isCache()) {
+                void vscode.window.showErrorMessage(includeOpenErrorMessage(includeFile, document.fileName, line));
+            }
+            return {result: null, visited};
+        }
+        try {
             const result = await findDeclaretion(included, new vscode.Position(0, 0), wordType, regs, token, visited);
             return {result, visited};
         } catch (reason) {
-            let error = String(reason);
-            error = error.includes("cannot open file") ? `[include ${path}] file not found` : error;
-            vscode.window.showErrorMessage(error);
+            vscode.window.showErrorMessage(String(reason));
             return {result: null, visited};
         }
     });

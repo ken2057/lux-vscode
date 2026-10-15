@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { LUX_MODE } from './const';
-import { convertIncludePath, skipLine } from './util';
+import { convertIncludePath, includeOpenErrorMessage, missingIncludeVariables, missingIncludeVariablesMessage, skipLine } from './util';
 import * as interfaces from './types/lux.interface';
 import { isCache } from './configuration';
 
@@ -72,6 +72,48 @@ export function logLuxError(ctx: vscode.ExtensionContext, message: string): void
 
 function cacheInfo(ctx: vscode.ExtensionContext, message: string): void {
     logLuxInfo(ctx, message);
+}
+
+function reportIncludeOpenError(
+    ctx: vscode.ExtensionContext,
+    rawPath: string,
+    includePath: string,
+    sourcePath: string,
+    line: number | undefined,
+    error: unknown
+): void {
+    const message = includeOpenErrorMessage(rawPath, sourcePath, line);
+    logLuxError(ctx, `${message} (resolved to ${includePath}): ${String(error)}`);
+    void vscode.window.showErrorMessage(message);
+}
+
+async function findIncludeDirective(document: vscode.TextDocument, includePath: string): Promise<{raw: string; line: number} | undefined> {
+    for (let line = 0; line < document.lineCount; line++) {
+        const text = document.lineAt(line).text.trim();
+        if (skipLine(text)) {
+            continue;
+        }
+        const raw = text.match(/\[include\s+([^\s]+)\]/)?.[1];
+        if (raw && await convertIncludePath(document, raw) === includePath) {
+            return {raw, line: line + 1};
+        }
+    }
+    return undefined;
+}
+
+function requireIncludeVariables(
+    ctx: vscode.ExtensionContext,
+    document: vscode.TextDocument,
+    line: number,
+    rawPath: string
+): void {
+    const message = missingIncludeVariablesMessage(rawPath);
+    if (!message) {
+        return;
+    }
+    logLuxError(ctx, `${message} at ${document.fileName}:${line}`);
+    void vscode.window.showErrorMessage(message);
+    throw new Error(message);
 }
 
 export function getCachedFiles(
@@ -435,6 +477,15 @@ async function convertDocToCache(
     try {
         const cached = ctx.workspaceState.get<CacheLuxFile>(path);
         if (!force && cached?.fileInfo.version === document.version && cached.includes) {
+            const cachedIncludes = cached.includes.length > 0
+                ? cached.lux.run.filter((block): block is interfaces.IncludeBlock => block.type === "include")
+                : [];
+            for (const include of cachedIncludes) {
+                const rawPath = document.lineAt(include.line).text.match(/\[include\s+([^\s]+)\]/)?.[1];
+                if (rawPath) {
+                    requireIncludeVariables(ctx, document, include.line + 1, rawPath);
+                }
+            }
             const includePaths = cached.includes.filter(includePath => !walk.active.has(includePath));
             const includedDocuments = await Promise.all(includePaths.map(async includePath => {
                 let includedDocument: vscode.TextDocument;
@@ -442,6 +493,12 @@ async function convertDocToCache(
                     includedDocument = await vscode.workspace.openTextDocument(includePath);
                 } catch (error) {
                     walk.failed.add(includePath);
+                    const include = cachedIncludes.find(block => block.cachePath === includePath);
+                    const raw = include && document.lineAt(include.line).text.match(/\[include\s+([^\s]+)\]/)?.[1];
+                    const directive = raw
+                        ? {raw, line: include.line + 1}
+                        : await findIncludeDirective(document, includePath);
+                    reportIncludeOpenError(ctx, directive?.raw || includePath, includePath, document.fileName, directive?.line, error);
                     throw error;
                 }
                 return includedDocument;
@@ -487,6 +544,9 @@ async function convertDocToCache(
 
     const prefetchedIncludes = new Map<string, Promise<vscode.TextDocument>>();
     await Promise.all([...document.getText().matchAll(/^\s*\[include\s+([^\s]+)\]/gm)].map(async match => {
+        if (missingIncludeVariables(match[1]).length > 0) {
+            return;
+        }
         const includePath = await convertIncludePath(document, match[1]);
         if (!prefetchedIncludes.has(includePath)) {
             const opening = Promise.resolve(vscode.workspace.openTextDocument(includePath));
@@ -721,10 +781,18 @@ async function convertDocToCache(
         // Include
         const includeMatch = text.match(/\[include\s+([^\s]+)\]/);
         if (includeMatch) {
+            requireIncludeVariables(ctx, document, i + 1, includeMatch[1]);
             const includePath = await convertIncludePath(document, includeMatch[1]);
+            let includeDoc: vscode.TextDocument;
+            try {
+                includeDoc = await (prefetchedIncludes.get(includePath) || vscode.workspace.openTextDocument(includePath));
+            } catch (error) {
+                walk.failed.add(includePath);
+                reportIncludeOpenError(ctx, includeMatch[1], includePath, document.fileName, i + 1, error);
+                return Promise.reject(`Failed to include file ${includePath} at ${document.fileName}:${i + 1} with error ${error}`);
+            }
 
             try {
-                const includeDoc = await (prefetchedIncludes.get(includePath) || vscode.workspace.openTextDocument(includePath));
                 await convertDocToCache(ctx, includeDoc, walk);
 
                 const include: interfaces.IncludeBlock = {

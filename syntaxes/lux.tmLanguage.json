@@ -10,6 +10,7 @@
         { "include": "#config" },
         { "include": "#define_variables" },
         { "include": "#define_export" },
+        { "include": "#event_log" },
         { "include": "#buildin_lux_variable" },
         { "include": "#variable_in_bracket" },
         { "include": "#use_variable" },
@@ -65,7 +66,7 @@
         "config": {
             "begin": "^\\s*\\[(config) +([^=]+)(=)",
             "beginCaptures": {
-                "1": {"name": "keyword.control.global.lux"},
+                "1": {"name": "keyword.other.meta.lux"},
                 "2": {"name": "keyword.control.lux"},
                 "3": { "name": "entity.name.section.lux" }
             },
@@ -76,9 +77,9 @@
             }
         },
         "define_variables": {
-            "begin": "^\\s*\\[(global|local|my) +([^=\\]]+)(=?)",
+            "begin": "^\\s*\\[(global|local|my) +([^=?\\]]+)(\\?=|=)?",
             "beginCaptures": {
-                "1": {"name": "keyword.control.global.lux"},
+                "1": {"name": "keyword.other.meta.lux"},
                 "2": {"name": "variable.language.lux"},
                 "3": { "name": "entity.name.section.lux" }
             },
@@ -98,7 +99,7 @@
         "define_export": {
             "begin": "^\\s*\\[(export) +([^=\\]]+)(=?)",
             "beginCaptures": {
-                "1": {"name": "keyword.control.global.lux"},
+                "1": {"name": "keyword.other.meta.lux"},
                 "2": {"name": "variable.language.lux"},
                 "3": { "name": "entity.name.section.lux" }
             },
@@ -113,6 +114,15 @@
             "end": "\\]\\s*$",
             "endCaptures": {
                 "1": {"name": "keyword.control.global.lux"}
+            }
+        },
+        "event_log": {
+            "match": "^[\\s]*\\[(event_log)(?: +(?:(enable)|(disable)) +(match|skip|rest))?\\]",
+            "captures": {
+                "1": {"name": "keyword.control.global.lux"},
+                "2": {"name": "markup.inserted.lux"},
+                "3": {"name": "markup.deleted.lux"},
+                "4": {"name": "constant.language.lux"}
             }
         },
          "buildin_lux_variable": {
@@ -202,7 +212,7 @@
         "include": {
             "begin": "^[\\s]*\\[(include) ",
             "beginCaptures": {
-                "1": {"name": "keyword.control.global.lux"}
+                "1": {"name": "keyword.other.meta.lux"}
             },
             "patterns": [
                 { "include": "#buildin_lux_variable" },

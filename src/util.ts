@@ -53,6 +53,26 @@ export function patchPath(path: string): string {
     });
 }
 
+export function missingIncludeVariables(path: string): string[] {
+    const missing = [...path.matchAll(/\$(?:\{(\w+)\}|(\w+))/g)]
+        .filter(match => !getCustomVariable(match[1] || match[2])?.trim())
+        .map(match => match[1] || match[2]);
+    return [...new Set(missing)];
+}
+
+export function missingIncludeVariablesMessage(path: string): string | null {
+    const variable = missingIncludeVariables(path)[0];
+    if (!variable) {
+        return null;
+    }
+    return `Variable \`${variable}\` is not set in lux.envVariables`;
+}
+
+export function includeOpenErrorMessage(path: string, source: string, line?: number): string {
+    const includeName = path.replace(/^"|"$/g, '');
+    return `Cannot open included file ${includeName} from ${source}${line === undefined ? '' : `:${line}`}`;
+}
+
 export function getWordFromPosition(
     document: vscode.TextDocument,
     position: vscode.Position,
