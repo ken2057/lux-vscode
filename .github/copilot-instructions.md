@@ -1,0 +1,33 @@
+# Project instructions
+
+This repository implements the Lux language support extension for Visual Studio Code.
+
+## Project files
+
+- Put extension implementation in `src/`. Do not edit generated JavaScript in `out/`.
+- Keep language grammar changes in `syntaxes/`, snippets in `snippets/`, and editor language settings in `language-configuration.json`.
+- Keep `package.json` contributions consistent with the commands, languages, grammars, snippets, and settings the extension implements.
+- Preserve compatibility with the VS Code engine range declared in `package.json` (`^1.53.0`).
+- Treat `.lux` and `.lux.tmpl` as equivalent root files.
+- Use the npm scripts in `package.json`: `npm run compile` for TypeScript compilation and `npm run lint` for linting.
+- In `syntaxes/lux.tmLanguage.json`, capture `?=` as one assignment operator for `global`, `local`, and `my` variables so `?` and `=` have the same scope.
+
+## Cache and definition search
+
+- Store each source file in its own `CacheLuxFile`. Link includes without merging source text. Keep each result's original file and line.
+- Cache an active root and its includes. Reuse unchanged files. On a root switch, keep shared includes and remove unused files after active lookups finish. Do not use size limits or cleanup timers.
+- Search cached files in this order: current file, includes in include order, same-folder files, then other cached files by folder distance. Keep this order when file reads run in parallel.
+- Use the text search when `lux.cache.enabled` is false or a cache update fails. Keep its results consistent with the cache search.
+- When finding macro invocations in the same folder, read those files without adding them to the cache.
+
+## Include errors
+
+- Check include variables before opening the file. Report only the first unset variable as ``Variable `NAME` is not set in lux.envVariables``.
+- If an include cannot be opened, report `Cannot open included file <name> from <source>:<line>`. Use the path from `[include]` without surrounding quotes.
+- Apply these errors to cache search, text search, and Go to Definition on an `[include]` path. Keep the detailed cache error in the `Lux Language Support` output channel.
+
+## Failure traces
+
+- Accept workspace-relative paths, file names, and bare indexes as trace input. Follow includes and macros when resolving trace locations.
+- Keep negative trace indexes as loop counts. Show skipped loop headers without source code and keep source links on other entries.
+- Keep `lux.failureTrace.showFullMacroBlock` enabled by default. Use source files when matching cache data is unavailable.
