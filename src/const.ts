@@ -5,6 +5,11 @@ export const LUX_MODE: vscode.DocumentFilter = { language: 'lux', scheme: 'file'
 export const EXTENSION_ID: string = 'ken2057.lux-vscode';
 
 export const COMMENT: string = '#'
+export const EXECUTE_1: string = '!'
+export const EXECUTE_2: string = '~'
+export const ASSERT: string = '?'
+export const ASSERT_BLOCK: string = '"""?'
+export const PROGRESS_BLOCK: string = '[progress'
 
 export const PATH_SEPARATOR: string = '/'
 

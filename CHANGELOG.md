@@ -2,9 +2,20 @@
 
 All notable changes to the "lux-vscode" extension are documented in this file.
 
+## [1.1.0] - 2026-10-15
+
+- Added a cache for `.lux`, `.lux.tmpl`, and included `.luxinc` files to speed up repeated definition searches.
+- Updated Go to Definition to search the current file, included files, nearby files, and other cached files in order.
+- Kept shared includes when the active root changes and removed cache entries that the new root does not use.
+- Used cached macro and loop ranges for editor highlights and failure traces when available.
+- Added `Lux: Show Failure Location` to show source lines, loop counts, and links to source files for Lux failure locations.
+- Added `lux.cache.enabled` and `lux.failureTrace.showFullMacroBlock` configuration. Text search remains available when the cache is disabled.
+- Added cache and trace generation messages to the `Lux Language Support` output channel.
+
 ## [1.0.12] - 2026-10-14
 
 - Added syntax highlighting for `[loop]` blocks that repeat until an `@` pattern matches.
+- Added file type `.lux.tmpl`.
 
 ## [1.0.11] - 2026-10-07
 

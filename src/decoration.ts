@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import { LUX_MODE } from './const';
 import { MacroBlockInfo } from './macro';
 import { LoopBlockInfo } from './loop';
-import { DecorateShellBlockInfo } from './shell';
-import { isShowBlockHighlight } from './util';
+import { isCache, isShowBlockHighlight } from './configuration';
+import { CacheLuxFile, CachedDecorationBlock } from './cache';
 
 export interface BlockInfo {
     name: string;
@@ -65,15 +65,10 @@ export function ClearDecoration(editor: vscode.TextEditor, blockInfo: BlockInfo)
 
 function decorateBlockInfo(
     editor: vscode.TextEditor,
-    text: string,
-    cursorOffset: number,
     blockInfo: BlockInfo,
+    range: vscode.Range | null,
 ) {
     ClearDecoration(editor, blockInfo);
-    if (!isShowBlockHighlight()) return;
-
-    // Logic to find the innermost block containing the cursor
-    const range = findCurrentBlock(editor, blockInfo, text, cursorOffset);
 
     if (range) {
         const firstLine = editor.document.lineAt(range.start.line);
@@ -115,6 +110,36 @@ function decorateBlockInfo(
     }
 }
 
+function findCachedBlock(
+    document: vscode.TextDocument,
+    blocks: CachedDecorationBlock[],
+    type: CachedDecorationBlock["type"],
+    cursor: vscode.Position
+): vscode.Range | null {
+    let nearest: CachedDecorationBlock | undefined;
+    for (const block of blocks) {
+        if (block.type !== type || block.startLine < 0 || block.endLine >= document.lineCount ||
+            block.startLine > block.endLine || block.startCol < 0 ||
+            block.startLine > cursor.line || block.endLine < cursor.line ||
+            (block.startLine === cursor.line && block.startCol > cursor.character)) {
+            continue;
+        }
+        if (!nearest || block.startLine > nearest.startLine ||
+            (block.startLine === nearest.startLine && block.startCol > nearest.startCol) ||
+            (block.startLine === nearest.startLine && block.startCol === nearest.startCol &&
+                block.endLine < nearest.endLine)) {
+            nearest = block;
+        }
+    }
+    if (!nearest) {
+        return null;
+    }
+    return new vscode.Range(
+        new vscode.Position(nearest.startLine, nearest.startCol),
+        document.lineAt(nearest.endLine).range.end
+    );
+}
+
 export function LuxDecorationListener(
     ctx: vscode.ExtensionContext,
     event: vscode.TextEditorSelectionChangeEvent
@@ -122,13 +147,25 @@ export function LuxDecorationListener(
     const editor = event.textEditor;
     if (!editor || editor.document.languageId !== LUX_MODE.language) return;
 
-    const cursorOffset = editor.document.offsetAt(event.selections[0].active);
-    const text = editor.document.getText();
+    const document = editor.document;
+    const cursor = event.selections[0].active;
+    const cached = isCache() ? ctx.workspaceState.get<CacheLuxFile>(document.uri.fsPath) : undefined;
+    const blocks = cached?.fileInfo.version === document.version && Array.isArray(cached.decorationBlocks)
+        ? cached.decorationBlocks
+        : undefined;
+    const showHighlight = isShowBlockHighlight();
+    let text: string | undefined;
 
-    [MacroBlockInfo,
-     LoopBlockInfo,
-    ].forEach(BlockInfo => {
-        decorateBlockInfo(editor, text, cursorOffset, BlockInfo);
-    });
+    for (const {info, type} of [
+        {info: MacroBlockInfo, type: "macro" as const},
+        {info: LoopBlockInfo, type: "loop" as const}
+    ]) {
+        const range = !showHighlight
+            ? null
+            : blocks
+                ? findCachedBlock(document, blocks, type, cursor)
+                : findCurrentBlock(editor, info, text ??= document.getText(), document.offsetAt(cursor));
+        decorateBlockInfo(editor, info, range);
+    }
     // DecorateShellBlockInfo(ctx, editor, editor.document.offsetAt(event.selections[0].active));
 }

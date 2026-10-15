@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
-import { getCustomVariable, getWordFromPosition, patchPath, WordType } from './util';
+import { getWordFromPosition, patchPath } from './util';
 import { BUILD_IN_LUX_VARIABLES } from './const';
-import { LuxDefinitionProvider } from './declaretion';
+import { getCustomVariable } from './configuration';
 
 export class LuxHoverProvider implements vscode.HoverProvider {
     private ctx: vscode.ExtensionContext;

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { BlockInfo, findCurrentBlock } from './decoration';
+import { BlockInfo } from './decoration';
 
 const verticalLineDecoration = vscode.window.createTextEditorDecorationType({
     border: '1.5px solid rgba(80, 250, 123, 0.7)', // Color of the line

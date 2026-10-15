@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { EXTENSION_ID, WORKSPACE, BUILD_IN_LUX_VARIABLES, PATH_SEPARATOR } from './const';
+import { EXTENSION_ID, WORKSPACE, BUILD_IN_LUX_VARIABLES, PATH_SEPARATOR, COMMENT, EXECUTE_1, EXECUTE_2, ASSERT, ASSERT_BLOCK, PROGRESS_BLOCK } from './const';
+import { getCustomVariable } from './configuration';
 
 export interface WordType {
     type: "variable" | "macro" | "link" | "invoke" | "use_variable" | undefined
@@ -35,17 +36,6 @@ export function isPositionInString(document: vscode.TextDocument, position: vsco
     return doubleQuotesCnt % 2 === 1;
 }
 
-export function getCustomVariable(varName: string): string | undefined {
-    return vscode.workspace
-            .getConfiguration("lux.envVariables")
-            .get(varName)
-}
-
-export function isShowBlockHighlight(): boolean {
-    return vscode.workspace
-            .getConfiguration("lux").get("showBlockHighlight", true)
-}
-
 export function patchPath(path: string): string {
     const reVariable = /\$(?:\{(\w+)\}|(\w+))/g
     return path.replace(reVariable, (whole, braced, plain) => {
@@ -71,7 +61,8 @@ export function getWordFromPosition(
     const wordRange = document.getWordRangeAtPosition(position, /\w+([-_]\w+)*/g)
     const wordWithVarRange = document.getWordRangeAtPosition(position, /(\$\w+|\${\w+})([-_]\${\w+}|[-_]\$\w+)*/g)
 
-    const lineText = document.lineAt(position.line).text.trim()
+    const rawLine = document.lineAt(position.line).text
+    const lineText = rawLine.trim()
     let word = wordRange ? document.getText(wordRange) : ''
     let wordWithVar = wordWithVarRange ? document.getText(wordWithVarRange) : ''
 
@@ -101,42 +92,44 @@ export function getWordFromPosition(
         }
 
         wType.type = "variable"
-        wType.value = word.replace(/^\$?(\$\{?)(.*)(\}?)$/, "$2")
+        wType.value = simpleVar(wordWithVar)
         // wType.find_all = true
         return wType
     }
-    // check macro
-    if (lineText.match(new RegExp("\\[invoke " + word))) {
-        const wR = document.getWordRangeAtPosition(position, /[-_\w${}]+/g)
-        let w = wR ? document.getText(wR) : ''
-        const reVar = new RegExp("\\$?\\$\\{?[_-\\w]*\\}?", "g")
-        const hasVar = reVar.exec(w)
-        if (hasVar && hasVar[0] != w) {
-            wType.value = w.replace(hasVar[0], "[-_\\w]+")
-            w = w.replace(hasVar[0], "")
-            wType.find_all = true
+    const invoke = rawLine.match(/^\s*\[invoke\s+([^\s\]]+)/)
+    if (invoke) {
+        const name = invoke[1]
+        const col = (invoke.index || 0) + invoke[0].lastIndexOf(name)
+        if (position.character >= col && position.character < col + name.length) {
+            wType.type = "macro"
+            wType.value = name
+            wType.find_all = /\$(?:\{\w+\}|\w+)/.test(name)
+            return wType
         }
+    }
 
-        wType.type = "macro"
-        return wType
-    }
-    // check invoke
-    if (lineText.startsWith("[macro ")) {
-        wType.type = "invoke"
-        wType.find_all = true
-        if (isIncludeFile) {
-            wType.find_on_same_folder = true
+    const macro = rawLine.match(/^\s*\[macro\s+([^\s\]]+)/)
+    if (macro) {
+        const name = macro[1]
+        const col = (macro.index || 0) + macro[0].lastIndexOf(name)
+        if (position.character >= col && position.character < col + name.length) {
+            wType.type = "invoke"
+            wType.find_all = true
+            wType.find_on_same_folder = isIncludeFile
+            return wType
         }
-        return wType
     }
-    // check use_variable
-    if (lineText.match(new RegExp(`\\[(global|local|my)\\s+${word}\\s*=`))) {
-        wType.type = "use_variable"
-        wType.find_all = true
-        if (isIncludeFile) {
-            wType.find_on_same_folder = true
+
+    const declaration = rawLine.match(/^\s*\[(global|local|my)\s+([^\s=\]]+)\s*=/)
+    if (declaration) {
+        const name = declaration[2]
+        const col = (declaration.index || 0) + declaration[0].indexOf(name, declaration[1].length + 1)
+        if (position.character >= col && position.character < col + name.length) {
+            wType.type = "use_variable"
+            wType.find_all = true
+            wType.find_on_same_folder = isIncludeFile
+            return wType
         }
-        return wType
     }
 
     return undefined
@@ -166,4 +159,23 @@ export async function convertIncludePath(
     }
 
     return uri.path
+}
+
+export function simpleVar(str: string): string {
+    const braced = str.match(/^\$\{(\w+)\}$/);
+    if (braced) {
+        return braced[1];
+    }
+    return str.startsWith('$') ? str.slice(1) : str;
+}
+
+export function skipLine(text: string): boolean {
+    const trimmed = text.trim();
+    return trimmed === '' ||
+           trimmed.startsWith(COMMENT) ||
+           trimmed.startsWith(EXECUTE_1) ||
+           trimmed.startsWith(EXECUTE_2) ||
+           trimmed.startsWith(ASSERT) ||
+           trimmed.startsWith(ASSERT_BLOCK) ||
+           trimmed.startsWith(PROGRESS_BLOCK);
 }

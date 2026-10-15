@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { BlockInfo, ClearDecoration } from './decoration';
-import { checkInvokeShellChange } from './cache';
 
 const annotation = vscode.window.createTextEditorDecorationType({
     after: {
@@ -17,25 +16,25 @@ export function DecorateShellBlockInfo(
     editor: vscode.TextEditor,
     cursorOffset: number
 ) {
-    editor.setDecorations(annotation, []);
+    // editor.setDecorations(annotation, []);
 
-    const text = checkInvokeShellChange(ctx, editor.document, cursorOffset);
-    if (!text) {
-        return
-    }
+    // const text = checkInvokeShellChange(ctx, editor.document, cursorOffset);
+    // if (!text) {
+    //     return
+    // }
 
-    const position = editor.document.positionAt(cursorOffset);
-    const line = editor.document.lineAt(position.line).text;
-    const range = new vscode.Range(position.line, line.length, position.line, line.length);
+    // const position = editor.document.positionAt(cursorOffset);
+    // const line = editor.document.lineAt(position.line).text;
+    // const range = new vscode.Range(position.line, line.length, position.line, line.length);
 
-    const decoration: vscode.DecorationOptions = {
-        range: range,
-        renderOptions: {
-            after: {
-                contentText: text,
-            }
-        }
-    }
+    // const decoration: vscode.DecorationOptions = {
+    //     range: range,
+    //     renderOptions: {
+    //         after: {
+    //             contentText: text,
+    //         }
+    //     }
+    // }
 
-    editor.setDecorations(annotation, [decoration]);
+    // editor.setDecorations(annotation, [decoration]);
 }

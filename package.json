@@ -3,7 +3,7 @@
     "publisher": "duyn",
     "displayName": "Lux (LUcid eXpect scripting) Language Support",
     "description": "Lux test language support extension",
-    "version": "1.0.12",
+    "version": "1.1.0",
     "engines": {
         "vscode": "^1.53.0"
     },
@@ -11,9 +11,18 @@
         "Programming Languages",
         "Snippets"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onLanguage:lux",
+        "onCommand:lux.showFailureLocation"
+    ],
     "main": "./out/extension.js",
     "contributes": {
+        "commands": [
+            {
+                "command": "lux.showFailureLocation",
+                "title": "Lux: Show Failure Location"
+            }
+        ],
         "languages": [
             {
                 "id": "lux",
@@ -22,14 +31,20 @@
                     "lux"
                 ],
                 "extensions": [
-                    "lux",
-                    "luxinc"
+                    ".lux",
+                    ".luxinc",
+                    ".lux.tmpl"
                 ],
                 "configuration": "./language-configuration.json",
                 "icon": {
                     "light": "assets/images/icon-256x256.png",
                     "dark": "assets/images/icon-256x256.png"
                 }
+            },
+            {
+                "id": "lux-failure",
+                "aliases": ["Lux failure location"],
+                "extensions": [".luxtrace"]
             }
         ],
         "grammars": [
@@ -37,6 +52,11 @@
                 "language": "lux",
                 "scopeName": "source.lux",
                 "path": "./syntaxes/lux.tmLanguage.json"
+            },
+            {
+                "language": "lux-failure",
+                "scopeName": "source.lux.failure",
+                "path": "./syntaxes/lux-failure.tmLanguage.json"
             }
         ],
         "snippets": [
@@ -63,6 +83,26 @@
                         "type": "boolean",
                         "default": true,
                         "description": "Enable or disable block highlight"
+                    }
+                }
+            },
+            {
+                "title": "Caching",
+                "properties": {
+                    "lux.cache.enabled": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable or disable caching"
+                    }
+                }
+            },
+            {
+                "title": "Generate trace",
+                "properties": {
+                    "lux.failureTrace.showFullMacroBlock": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Show the full macro block for a failure location inside a macro. Otherwise, show nearby lines."
                     }
                 }
             }
